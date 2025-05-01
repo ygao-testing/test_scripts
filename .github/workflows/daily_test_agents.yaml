@@ -23,10 +23,23 @@ jobs:
       - name: Checkout the repository
         uses: actions/checkout@v4
 
-      - name: Set up Python 3.12.2
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.12.2'
+      - name: Install dependencies
+        run: |
+          echo "123456" | sudo -S apt update
+          echo "123456" | sudo -S apt install -y build-essential libssl-dev zlib1g-dev \
+            libncurses5-dev libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm \
+            libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
+
+      - name: Build and install Python
+        run: |
+          wget https://www.python.org/ftp/python/3.12.3/Python-3.12.3.tgz
+          tar -xvzf Python-3.12.3.tgz
+          cd Python-3.12.3
+          ./configure --enable-optimizations
+          make -j$(nproc)
+          echo "123456" | sudo -S make altinstall
+      - name: Verify Python
+        run: python3.12 --version
 
       - name: Create virtual environment and install dependencies
         run: |
