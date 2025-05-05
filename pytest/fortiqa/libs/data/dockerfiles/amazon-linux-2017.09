@@ -1,0 +1,2 @@
+FROM amazonlinux:2017.09
+CMD ["echo", "Running Amazon Linux AMI 2017.09"]

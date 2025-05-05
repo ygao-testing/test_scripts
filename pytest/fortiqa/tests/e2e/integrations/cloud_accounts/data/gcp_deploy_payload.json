@@ -1,0 +1,15 @@
+{
+    "service_provider": "gcp",
+    "data": {
+      "access_token": "REQUIRED",
+      "project_id": "REQUIRED",
+      "region": "us-west1",
+      "org_id": "REQUIRED",
+      "is_org": false
+    },
+    "integrations": [
+      "gcp_agentless",
+      "gcp_config",
+      "gcp_audit_log"
+    ]
+  }

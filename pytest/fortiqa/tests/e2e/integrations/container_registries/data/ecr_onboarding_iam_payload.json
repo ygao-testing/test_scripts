@@ -1,0 +1,24 @@
+{
+    "TYPE": "CONT_VULN_CFG",
+    "ENABLED": 1,
+    "IS_ORG": 0,
+    "NAME": "lw_ecr_onboarding_test",
+    "DATA": {
+        "CROSS_ACCOUNT_CREDENTIALS": {
+            "EXTERNAL_ID": "REQUIRED",
+            "ROLE_ARN": "REQUIRED"
+        },
+        "AWS_AUTH_TYPE": "AWS_IAM",
+        "REGISTRY_TYPE": "AWS_ECR",
+        "REGISTRY_DOMAIN": "140023371607.dkr.ecr.us-east-1.amazonaws.com",
+        "LIMIT_BY_TAG": [],
+        "LIMIT_BY_LABEL": [],
+        "LIMIT_BY_REP": [],
+        "LIMIT_NUM_IMG": 5,
+        "NON_OS_PACKAGE_EVAL": true
+    },
+    "PROPS": {
+        "tags": "AWS_ECR"
+    },
+    "ENV_GUID": ""
+}

@@ -1,0 +1,32 @@
+This will create vpc, nat gateway, internet gateway, route table, ec2 instances , s3 bucket, snapshots from web-server1 and web-server2 ,volumes
+network-interface,Iam user, iam group, role and policy, rds:db instance standalone
+topology:
+1-basation in public network to ssh to web server in private network
+2- allow ping for webserver in private network and (from basation)
+3- allow incoming http for webserver using alb ( alb should have two avaiblity zone ,it prequist for alb to work)
+1- create cnf instance in cnf local manualy and create policy set to allow
+5 - in routing table traffic privatre subnet going to 0.0.0.0 goes to fortinetcnf end point and from there to natgateway
+6-  in routing table traffic public going from public subnet to privatre subnet goes to vpc_end point of fortinet
+7- in routing table traffic public going  to  0.0.0.0/0 goes to internet gatway
+9- basation subnet traffic to public goes to internetygateway
+10- by default in each subnet aws create traffic to cider of vpc (destination) to target local
+Longest Prefix Match Rule in AWS
+
+The Longest Prefix Match rule is a fundamental principle used by AWS and most networking devices (like routers and firewalls) to select the best route when multiple routes match a given destination IP address. The idea is to choose the route that has the most specific match, which means the one with the longest subnet mask (i.e., the route that matches the most bits of the destination IP address).
+How It Works
+
+    Prefix Length: In a CIDR block notation like 10.1.0.0/16, the number after the slash (/16) indicates the prefix length or the subnet mask. It shows how many bits of the IP address are fixed (network bits). The longer the prefix, the more specific the route.
+        10.1.0.0/16 matches the first 16 bits of the IP address.
+        10.1.61.0/24 matches the first 24 bits of the IP address and is therefore more specific than 10.1.0.0/16.
+
+    Matching Process: When AWS (or any router) processes an IP packet and needs to determine the next hop, it looks at all the available routes and selects the one with the longest prefix that matches the destination IP address.
+        Example: If the destination IP is 10.1.61.10, and there are the following routes:
+            10.1.0.0/16 (prefix length: 16)
+            10.1.61.0/24 (prefix length: 24)
+        The router will choose 10.1.61.0/24 because it is more specific, matching 24 bits instead of 16 bits.
+
+    Precedence of Routes: The most specific route (longest prefix) has the highest priority.
+        If there is a match with both 10.1.0.0/16 and 10.1.61.0/24 for a destination like 10.1.61.10, 10.1.61.0/24 is chosen.
+
+
+2- create policy set with folowing policy in cnf to allow tarrafic from public subnet

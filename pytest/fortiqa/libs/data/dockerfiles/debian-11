@@ -1,0 +1,3 @@
+FROM debian:11
+RUN date +%s > /tmp/build_time
+CMD ["cat", "/tmp/build_time"]

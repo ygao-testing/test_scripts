@@ -1,0 +1,5 @@
+FROM debian:12 AS builder
+RUN date +%s > /tmp/build_time
+FROM gcr.io/distroless/static-debian12
+COPY --from=builder /tmp/build_time /tmp/build_time
+CMD ["cat", "/tmp/build_time"]

@@ -1,0 +1,23 @@
+{
+    "service_provider": "aws",
+    "data": {
+        "access_key_id": "REQUIRED",
+        "secret_access_key": "REQUIRED",
+        "session_token": "REQUIRED",
+        "region": "REQUIRED",
+        "cloudtrail_name": "",
+        "bucket_arn": "",
+        "bucket_sse_key_arn": "",
+        "sns_topic_arn": "",
+        "agentless_management_account_id": "",
+        "accounts": [],
+        "org_id": "",
+        "config_org_cf_resource_prefix": "",
+        "is_org": false,
+        "is_control_tower": false
+    },
+    "integrations": [
+        "aws_cloudtrail"
+    ],
+    "workspace_ids": ["REQUIRED"]
+}

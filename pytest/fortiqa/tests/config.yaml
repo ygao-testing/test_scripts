@@ -1,0 +1,40 @@
+app:
+  workspace_id: "lacework_test"
+  customer:
+    login_method: "magic_link"
+    lw_api_key: "*REQUIRED*"
+    lw_secret: "*REQUIRED*"
+    account_name: "*REQUIRED*"
+    user_email: "*REQUIRED*"
+    user_password: "*REQUIRED_FOR_FORTICLOUD_LOGIN*"
+    user_email_password: "*REQUIRED*"
+    sub_account: "*REQUIRED*"
+  aws_account:
+    aws_account_id: "*REQUIRED*"
+    aws_access_key_id: "*REQUIRED*"
+    aws_secret_access_key: "*REQUIRED*"
+    aws_terraform_s3_backend: "*REQUIRED*"
+    aws_terrafrom_s3_backend_region: "*REQUIRED*"
+  azure_account:
+    tenant_id: "*REQUIRED*"
+    client_id: "*REQUIRED*"
+    client_secret: "*REQUIRED*"
+    subscription_id: "*REQUIRED*"
+  gcp_service_account:
+    type: "*REQUIRED*"
+    project_id: "*REQUIRED*"
+    org_id: "*REQUIRED"
+    private_key_id: "*REQUIRED*"
+    private_key: "*REQUIRED*"
+    client_email: "*REQUIRED*"
+    client_id: "*REQUIRED*"
+    auth_uri: "*REQUIRED*"
+    token_uri: "*REQUIRED*"
+    auth_provider_x509_cert_url: "*REQUIRED*"
+    client_x509_cert_url: "*REQUIRED*"
+    universe_domain: "*REQUIRED*"
+  terrafrom_remote_backend:
+    s3_bucket: "*REQUIRED*"
+    s3_bucket_region: "*REQUIRED*"
+ui:
+  default_implicit_wait: 10

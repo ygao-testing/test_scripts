@@ -1,0 +1,5 @@
+FROM centos:7 AS builder
+RUN date +%s > /tmp/build_time
+FROM centos:6
+COPY --from=builder /tmp/build_time /tmp/build_time
+CMD ["cat", "/tmp/build_time"]

@@ -1,0 +1,11 @@
+{
+  "java": [
+    "commons-compress-1.21.jar",
+    "guava-31.1-jre.jar",
+    "jackson-databind-2.9.6.jar",
+    "log4j-core-2.12.1.jar"
+  ],
+  "gomod": [
+    "go.sum"
+  ]
+}

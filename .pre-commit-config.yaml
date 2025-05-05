@@ -1,0 +1,43 @@
+#  See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+    -   id: trailing-whitespace
+    -   id: end-of-file-fixer
+    -   id: check-yaml
+        args: [--unsafe]
+    -   id: check-added-large-files
+-   repo: https://github.com/pycqa/flake8
+    rev: '7.1.1'
+    hooks:
+    -   id: flake8
+        args: ['--extend-ignore=E501']
+-   repo: https://github.com/pycqa/pydocstyle
+    rev: 6.3.0
+    hooks:
+    -   id: pydocstyle
+        args:
+        - --add-ignore=D100,D101,D104,D105,D107,D204,D205,D400,D401,D415
+-   repo: https://github.com/pre-commit/mirrors-mypy
+    rev: 'v1.13.0'
+    hooks:
+    -   id: mypy
+        exclude: 'test_.*|conftest\.py|fixtures\.py'
+        additional_dependencies: [types-requests,types-paramiko,types-PyYAML]
+-   repo: local
+    hooks:
+    -   id: check-given-when-then-docstring
+        name: Check Given-When-Then docstring format and Args section
+        entry: python ops/scripts/check_test_docstring.py
+        language: python
+          # Run only on files starting with 'test_' or located in a 'tests/' directory
+        files: 'tests/(.*/)?test_.*\.py$'
+        exclude: ^pytest/fortiqa/tests/ui
+
+-   repo: https://github.com/gruntwork-io/pre-commit
+    rev: 'v0.1.24' # Get the latest from: https://github.com/gruntwork-io/pre-commit/releases
+    hooks:
+    -   id: terraform-validate
+        files: 'terraform/'

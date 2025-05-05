@@ -1,0 +1,35 @@
+{
+    "service_provider": "aws",
+    "data": {
+        "access_key_id": "",
+        "secret_access_key": "",
+        "session_token": "",
+        "region": "us-east-1",
+        "cloudtrail_name": "",
+        "bucket_arn": "",
+        "bucket_sse_key_arn": "",
+        "sns_topic_arn": "",
+        "agentless_regions": [
+            ""
+        ],
+        "agentless_management_account_id": "",
+        "agentless_monitored_account_ids": [
+            ""
+        ],
+        "accounts": [
+            ""
+        ],
+        "org_id": "",
+        "org_units": [
+            ""
+        ],
+        "config_org_cf_resource_prefix": "",
+        "is_org": false,
+        "is_control_tower": false
+    },
+    "integrations": [
+        "aws_agentless",
+        "aws_config",
+        "aws_cloudtrail"
+    ]
+}

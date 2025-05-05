@@ -1,0 +1,13 @@
+{
+    "service_provider": "azure",
+    "data": {
+      "client_id": "REQUIRED",
+      "client_secret": "REQUIRED",
+      "subscription_id": "REQUIRED",
+      "tenant_id": "REQUIRED"
+    },
+    "integrations": [
+      "azure_activity_log",
+      "azure_config"
+    ]
+}
