@@ -10,7 +10,7 @@ pipeline {
                     python -m pip install --upgrade pip
                     git clone git@github.com:ygao-testing/test_scripts.git
                     cd ${WORKSPACE}
-                    cd fortiqa
+                    cd test_scripts
                     git checkout ${BRANCH}
                     python -m pip install -r pytest/fortiqa/tests/requirements.txt
                     pip install pytest-testcenter
