@@ -1,0 +1,137 @@
+name: Daily - Self deployment positive cases
+
+on:
+    workflow_dispatch:
+        inputs:
+            environment:
+                description: 'Environment to run tests against'
+                type: choice
+                required: true
+                default: 'production'
+                options:
+                    - production
+                    - qan
+                    - spork
+    schedule:
+        - cron: '0 15 * * *'  # Runs at 8:00 AM Pacific time
+jobs:
+  test:
+    runs-on: arc-runner-lacework-dev-generic-lightweight
+
+    steps:
+
+
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+
+
+      - name: Show current branch
+        run: git branch --show-current
+
+
+      - name: Set up Python 3.12.3
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12.3'
+
+      - name: Create virtual environment and install dependencies
+        run: |
+              python -m venv .venv
+              source .venv/bin/activate
+              python -m pip install --upgrade pip
+              python -m pip install -r pytest/fortiqa/tests/requirements.txt
+
+
+      - name: Create user_config.yaml
+        run: |
+              # Set environment-specific variables
+              if [[ "${{ github.event.inputs.environment }}" == "qan" ]]; then
+                  LW_KEY="${{ secrets.STAGING_QAN_LW_KEY }}"
+                  LW_SECRET="${{ secrets.STAGING_QAN_LW_SECRET }}"
+                  ACCOUNT_NAME="qan.qan.corp"
+                  SUB_ACCOUNT="qan"
+                  USER_EMAIL="fcslwqaonboard@yahoo.com"
+                  USER_EMAIL_PASSWORD="${{ secrets.FCSLWQAONBOARD_EMAIL_PASSWORD }}"
+              elif [[ "${{ github.event.inputs.environment }}" == "spork" ]]; then
+                  LW_KEY="${{ secrets.STAGING_SPORK_LW_KEY }}"
+                  LW_SECRET="${{ secrets.STAGING_SPORK_LW_SECRET }}"
+                  ACCOUNT_NAME="fortiqa.spork.corp"
+                  SUB_ACCOUNT="onboarding-spork"
+                  USER_EMAIL="fcslwqaonboard@yahoo.com"
+                  USER_EMAIL_PASSWORD="${{ secrets.FCSLWQAONBOARD_EMAIL_PASSWORD }}"
+              else
+                  # Default to production
+                  LW_KEY="${{ secrets.FORTIQA_ONBOARDING_LW_KEY }}"
+                  LW_SECRET="${{ secrets.FORTIQA_ONBOARDING_LW_SECRET }}"
+                  ACCOUNT_NAME="fortiqa"
+                  SUB_ACCOUNT="onboarding"
+                  USER_EMAIL="fcslwqaonboard@yahoo.com"
+                  USER_EMAIL_PASSWORD="${{ secrets.FCSLWQAONBOARD_EMAIL_PASSWORD }}"
+              fi
+
+              cat <<EOF > pytest/fortiqa/tests/user_config.yaml
+              app:
+                workspace_id: "lacework_test"
+                customer:
+                    lw_api_key: "$LW_KEY"
+                    lw_secret: "$LW_SECRET"
+                    account_name: "$ACCOUNT_NAME"
+                    user_email: "$USER_EMAIL"
+                    user_email_password: "$USER_EMAIL_PASSWORD"
+                    sub_account: "$SUB_ACCOUNT"
+                aws_account:
+                    aws_account_id: "140023371607"
+                    aws_access_key_id: "${{secrets.SELFDEPLOYMENT_AWS_KEY}}"
+                    aws_secret_access_key: "${{secrets.SELFDEPLOYMENT_AWS_SECRET}}"
+              EOF
+
+
+      - name: Check current working directory
+        run: pwd
+
+      - name: Print GitHub workspace directory
+        run: |
+            echo "GitHub workspace is: ${{ github.workspace }}"
+
+
+      - name: Capture and print test start time
+        run: |
+          test_start_time=$(date +'%Y-%m-%d_%H-%M-%S')
+          echo "test_start_time=$test_start_time" >> $GITHUB_ENV
+          echo "Test started at: $test_start_time"
+
+      - name: Run Pytest tests
+        run: |
+          source .venv/bin/activate
+          cd pytest/fortiqa/tests
+          pytest e2e/integrations/cloud_accounts/aws/test_aws_self_deployment.py --collect-only -q
+          pytest e2e/integrations/cloud_accounts/aws/test_aws_self_deployment.py -s -vv -rA --html=report_self_deployment.html --self-contained-html --junitxml=results_self_deployment.xml | tee pytest_output_self_deployment.log
+          test ${PIPESTATUS[0]} -eq 0
+
+      - name: Capture and print test end time
+        if: always()
+        run: |
+          test_end_time=$(date +'%Y-%m-%d_%H-%M-%S')
+          echo "test_end_time=$test_end_time" >> $GITHUB_ENV
+          echo "Test ended at: $test_end_time"
+
+      - name: Publish all test results
+        if: always()
+        uses: pmeier/pytest-results-action@v0.7.1
+        with:
+          path: pytest/fortiqa/tests/results_self_deployment.xml
+          summary: true
+          display-options: pfEXxs
+          title: Complete Test Results
+          fail-on-empty: true
+
+      - name: Archive test results  #upload the test result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Test-Results-${{ env.test_start_time }}-to-${{ env.test_end_time }}
+          path: |
+            pytest/fortiqa/tests/report_self_deployment.html
+            pytest/fortiqa/tests/results_self_deployment.xml
+            pytest/fortiqa/tests/lacework_test.log
+            pytest/fortiqa/tests/pytest_output_self_deployment.log

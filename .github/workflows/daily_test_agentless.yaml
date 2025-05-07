@@ -1,0 +1,95 @@
+name: Daily - Test Agentless
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+
+jobs:
+  test_agentless:
+    runs-on: arc-runner-lacework-dev-generic-lightweight
+    steps:
+      - name: Install Terraform
+        run: |
+          sudo apt-get update && sudo apt-get install -y gnupg software-properties-common curl
+          curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+          sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+          sudo apt-get update && sudo apt-get install terraform
+
+      - name: Verify Terraform installation
+        run: terraform --version
+
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12.3
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12.3'
+
+      - name: Create virtual environment and install dependencies
+        run: |
+              python -m venv .venv
+              source .venv/bin/activate
+              python -m pip install --upgrade pip
+              python -m pip install -r pytest/fortiqa/tests/requirements.txt
+
+      - name: Create user_config.yaml
+        run: |
+              cat <<EOF > pytest/fortiqa/tests/user_config.yaml
+              app:
+                workspace_id: "lacework_test"
+                customer:
+                    lw_api_key: "${{ secrets.FCSQA_LW_API_KEY_SYSTEM }}"
+                    lw_secret: "${{ secrets.FCSQA_LW_SECRET_SYSTEM }}"
+                    account_name: "fortiqa"
+                    user_email: "fcsqagen2@yahoo.com"
+                    user_email_password: "${{ secrets.FCSQA_USER_EMAIL_PASSWORD }}"
+                    sub_account: "system"
+                aws_account:
+                    aws_account_id: "471112895216"
+                    aws_access_key_id: "${{secrets.AWS_ACCESS_KEY_ID_471112895216}}"
+                    aws_secret_access_key: "${{secrets.AWS_SECRET_ACCESS_KEY_471112895216}}"
+              EOF
+
+      - name: Capture test start time
+        run: echo "test_start_time=$(date +'%Y-%m-%d_%H-%M-%S')" >> $GITHUB_ENV
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keygen -t rsa -N '' -f ~/.ssh/id_rsa <<< y
+          echo "TF_VAR_PUBLIC_KEY=$(cat ~/.ssh/id_rsa.pub)" >> $GITHUB_ENV
+
+      - name: Run Pytest tests
+        run: |
+          source .venv/bin/activate
+          cd pytest/fortiqa/tests
+          pytest e2e/agentless/ -s -vv --html=report.html --self-contained-html --junitxml=results.xml | tee pytest_output.log
+          test ${PIPESTATUS[0]} -eq 0
+
+      - name: Capture test end time
+        if: always()
+        run: echo "test_end_time=$(date +'%Y-%m-%d_%H-%M-%S')" >> $GITHUB_ENV
+
+      - name: Publish all test results
+        if: always()
+        uses: pmeier/pytest-results-action@v0.7.1
+        with:
+          path: pytest/fortiqa/tests/results.xml
+          summary: true
+          display-options: fsEXxX
+          title: Complete Test Results
+          fail-on-empty: true
+
+
+      - name: Archive test results  #upload the test result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Test-Results-${{ env.test_start_time }}-to-${{ env.test_end_time }}
+          path: |
+            pytest/fortiqa/tests/report.html
+            pytest/fortiqa/tests/results.xml
+            pytest/fortiqa/tests/lacework_test.log
+            pytest/fortiqa/tests/pytest_output.log

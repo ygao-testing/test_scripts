@@ -126,7 +126,7 @@ def test_verify_new_vulnerabilities_top_items_tab(ui, delete_files, widget):
 
 
 # Explore #
-@pytest.mark.skip(reasons="Not ready since UI changed. https://lacework.atlassian.net/browse/FORTIQA-403")
+# @pytest.mark.skip(reasons="Not ready since UI changed. https://lacework.atlassian.net/browse/FORTIQA-403")
 @pytest.mark.download
 @pytest.mark.parametrize("delete_files", [{"prefix": "", "suffix": "csv"}], indirect=True)
 @pytest.mark.parametrize("show",

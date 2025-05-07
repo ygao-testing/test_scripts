@@ -8,7 +8,7 @@ pipeline {
                     python3.12 -m venv ./venv
                     . ./venv/bin/activate
                     python -m pip install --upgrade pip
-                    git clone git@github.com:ygao-testing/test_scripts.git
+                    git clone git@github.com:lacework-dev/fortiqa.git
                     cd ${WORKSPACE}
                     cd fortiqa
                     git checkout ${BRANCH}

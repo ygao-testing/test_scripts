@@ -1,0 +1,113 @@
+pipeline {
+    agent { label 'docker_agent'}
+    stages {
+        stage('Prepare Environment') {
+            steps{
+                script {
+                    currentBuild.displayName = "$FEATURE-$ENV"
+                }
+                cleanWs()
+                sh """
+                    git clone git@github.com:lacework-dev/fortiqa.git
+                    terraform --version
+                    python3.12 -m venv ./venv
+                    . ./venv/bin/activate
+                    python -m pip install -r fortiqa/pytest/fortiqa/tests/requirements.txt
+                    pip install pytest-testcenter
+                """
+            }
+        }
+        stage('Test') {
+            environment {
+                TESTCENTER_TOKEN = credentials('testcenter_lacework_fcsqa_token')
+                aws = credentials('886436945382')
+                lw_secret_demobeta = credentials("fcsqagen2_yahoo_demobeta_api_key_and_access")
+                lw_secret_aprodus2 = credentials("fcsqagen2_yahoo_system_e2e_api_key_and_access")
+                lw_secret_spork = credentials("spork-fcsqagen2_yahoo_system_e2e_spork-api_key_and_access")
+                lw_secret_sgmtest = credentials("sgmtest-fcsqagen2_yahoo_sgmtest-api_key_and_access")
+                email_creds = credentials("fcsqagen2_yahoo_app_cred")
+            }
+            steps {
+                script {
+                    if (env.ENV == 'APRODUS2') {
+                        writeFile(file: 'fortiqa/pytest/fortiqa/tests/user_config.yaml', text: """
+---
+app:
+    workspace_id: "lacework_test"
+    customer:
+        lw_api_key: "$lw_secret_aprodus2_USR"
+        lw_secret: "$lw_secret_aprodus2_PSW"
+        account_name: "fortiqa"
+        user_email: "$email_creds_USR"
+        user_email_password: "$email_creds_PSW"
+        sub_account: "system-e2e"
+    aws_account:
+        aws_account_id: "886436945382"
+""")
+                    } else if (env.ENV == 'SPORK') {
+                        writeFile(file: 'fortiqa/pytest/fortiqa/tests/user_config.yaml', text: """
+---
+app:
+    workspace_id: "lacework_test"
+    customer:
+        lw_api_key: "$lw_secret_spork_USR"
+        lw_secret: "$lw_secret_spork_PSW"
+        account_name: "fortiqa.spork.corp"
+        user_email: "$email_creds_USR"
+        user_email_password: "$email_creds_PSW"
+        sub_account: "system-e2e-spork"
+    aws_account:
+        aws_account_id: "886436945382"
+""")
+                    } else if (env.ENV == 'PRODN1') {
+                        writeFile(file: 'fortiqa/pytest/fortiqa/tests/user_config.yaml', text: """
+---
+app:
+    workspace_id: "lacework_test"
+    customer:
+        lw_api_key: "$lw_secret_demobeta_USR"
+        lw_secret: "$lw_secret_demobeta_PSW"
+        account_name: "demobeta"
+        user_email: "$email_creds_USR"
+        user_email_password: "$email_creds_PSW"
+        sub_account: "05-2022-demobeta"
+    aws_account:
+        aws_account_id: "886436945382"
+""")
+                    }
+                    else if (env.ENV == 'SGMTEST') {
+                        writeFile(file: 'fortiqa/pytest/fortiqa/tests/user_config.yaml', text: """
+---
+app:
+    workspace_id: "lacework_test"
+    customer:
+        lw_api_key: "$lw_secret_sgmtest_USR"
+        lw_secret: "$lw_secret_sgmtest_PSW"
+        account_name: "sgmtest.qan.corp"
+        user_email: "$email_creds_USR"
+        user_email_password: "$email_creds_PSW"
+        sub_account: ""
+    aws_account:
+        aws_account_id: "886436945382"
+""")
+                    }
+                    sh """
+                        . ./venv/bin/activate
+                        cd fortiqa/pytest/
+                        pytest fortiqa/tests/api/$FEATURE --collect-only
+                        pytest fortiqa/tests/api/$FEATURE -s -vv --html=report.html --self-contained-html --junitxml=results.xml --tc_dest remote --testcenter_notes '{"target_url": "https://fortiqa.lacework.net"}'
+                    """
+                }
+            }
+        }
+    }
+    post {
+        always {
+            script{
+                archiveArtifacts artifacts: 'fortiqa/pytest/*.html, fortiqa/pytest/results.xml, fortiqa/pytest/lacework_test.log'
+                junit 'fortiqa/pytest/results.xml'
+            }
+
+        }
+    }
+}

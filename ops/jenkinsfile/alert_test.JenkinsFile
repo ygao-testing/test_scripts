@@ -1,0 +1,78 @@
+pipeline {
+    agent {label 'ubuntu'}
+    stages {
+        stage('Terraform deploy') {
+            environment {
+                LW_ACCOUNT = 'fortiqa'
+            }
+            steps{
+                cleanWs()
+                script {
+                    withCredentials([usernamePassword(credentialsId: 'fcslwsysteme2e_api_key', passwordVariable: 'LW_API_SECRET', usernameVariable: 'LW_API_KEY')]) {
+                        sh """
+                            git clone git@github.com:lacework-dev/fortiqa.git
+                            cd fortiqa/
+                            git checkout rb0923
+                            cd terraform/lacework_provider/alert_rules/
+                            terraform init
+                            terraform apply -auto-approve
+                        """
+                    }
+                }
+            }
+        }
+        stage('Test') {
+            environment {
+                aws = credentials("aws_cnp_rauf")
+                TESTCENTER_TOKEN = credentials('testcenter_lacework_fcsqa_token')
+            }
+            steps {
+                script {
+                    withCredentials([usernamePassword(credentialsId: 'fcslwsysteme2e_api_key', passwordVariable: 'LW_SECRET', usernameVariable: 'LW_API_KEY')]) {
+                        sh """
+                            python3.12 -m venv ${WORKSPACE}/venv
+                            . ./venv/bin/activate
+                            python -m pip install pytest pytest-html pytest-xdist python-terraform PyYAML boto3 filelock requests pytest-testcenter
+                            cd ${WORKSPACE}/fortiqa/pytest/fortiqa/tests/
+                            git checkout rb0923
+                            pytest alert_channels alert_rules -s -vv --html=report.html --self-contained-html --tf_dir ${WORKSPACE}/fortiqa/terraform/lacework_provider/alert_rules/ --tc_dest remote --testcenter_notes '{"target_url": "https://fortiqa.lacework.net"}'
+                        """
+                    }
+                }
+            }
+        }
+        stage('Terraform destroy') {
+            environment {
+                LW_ACCOUNT = 'fortiqa'
+            }
+            steps{
+                script {
+                    withCredentials([usernamePassword(credentialsId: 'fcslwsysteme2e_api_key', passwordVariable: 'LW_API_SECRET', usernameVariable: 'LW_API_KEY')]) {
+                        sh """
+                            cd ${WORKSPACE}/fortiqa/
+                            git checkout rb0923
+                            cd terraform/lacework_provider/alert_rules/
+                            terraform destroy -auto-approve
+                        """
+                    }
+                }
+            }
+        }
+    }
+    post {
+        always {
+            script {
+                withCredentials([usernamePassword(credentialsId: 'fcslwsysteme2e_api_key', passwordVariable: 'LW_API_SECRET', usernameVariable: 'LW_API_KEY')]) {
+                    sh """
+                        export LW_ACCOUNT='fortiqa'
+                        cd ${WORKSPACE}/fortiqa/
+                        git checkout rb0923
+                        cd terraform/lacework_provider/alert_rules/
+                        terraform destroy -auto-approve
+                    """
+                }
+                archiveArtifacts artifacts: '**/*.html,**/results.xml'
+            }
+        }
+    }
+}

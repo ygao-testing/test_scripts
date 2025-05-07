@@ -1,0 +1,63 @@
+pipeline {
+    agent {label 'ubuntu'}
+    stages {
+        stage('Prepare Environment') {
+            steps{
+                cleanWs()
+                sh """
+                    git clone git@github.com:lacework-dev/api-automation.git
+                    cd api-automation
+                    git checkout ${BRANCH}
+                    python3.12 -m venv ./venv
+                    . ./venv/bin/activate
+                    cd venv
+                    git clone git@github.com:lacework-dev/madrox.git
+                    git clone git@github.com:lacework-dev/testclient-base.git
+                    git clone git@github.com:lacework-dev/shockwave.git
+                    cd testclient-base
+                    git checkout gjian
+                    cd ..
+                    pip install madrox/. shockwave/. testclient-base/plugins/pytest-lacework/
+                    cd ..
+                    pip install .
+                """
+            }
+        }
+        stage('Test') {
+            environment {
+                TESTCENTER_TOKEN = credentials('testcenter_lacework_fcsqa_token')
+            }
+            steps {
+                script {
+                    def testcase_cmd_map = [
+                        'rbac-account-admin': "net/lacework/tests/apiv2 -k 'not TestSlackAlertChannel and not TestEmailUserAlertChannel and not test_verify_update_alert_channel_multiple_scenario[tc2] and not test_search_alert_rule_evaluations[tc3] and not test_search_report_rule_evaluations[tc3] and not test_search_team_members_evaluations[tc0] and not TestTeamMemberAPI and not TestDownloadFIleAPI' -m 'control_plane and admin'",
+                        'iris-rbac': "net/lacework/tests/iris -m 'account_admin_iris'",
+                        'saml-jit': "net/lacework/tests/org_admin_subaccount_access/org_user_flow -m jit_flow",
+                        'rbac-org': "net/lacework/tests/orgadminapiv2 -m 'org_admin'",
+                        'rbac-custom-usergroup': "net/lacework/tests/custom_usr_grp -k 'not scan' -m 'rbac_customusergroup'",
+                        'org-user-flows': "net/lacework/tests/org_user_creation/type_of_org_users"
+                    ]
+
+                    sh """
+                        cd api-automation
+                        sed -i "s/\\\${LW_USER_EMAIL}/fcsqagen@gmail.com/g" net/lacework/tests/resources/fortiqa.yaml
+                        sed -i "s/\\\${LW_KEY_ID}/FORTIQAE_F5CE3A10197DAB72F0BA105A27730AC7BDDE614F2A0637B/g" net/lacework/tests/resources/fortiqa.yaml
+                        sed -i "s/\\\${LW_SECRET_KEY}/_ada5ef135ac1f18f9b16cdf1b6f1a0aa/g" net/lacework/tests/resources/fortiqa.yaml
+                        . ./venv/bin/activate
+                        pip install pytest-html pytest-xdist
+                        pip install pytest-testcenter
+                        python3 -m pytest ${testcase_cmd_map[env.TEST_PIPELINE]} --lacework --lw-test-config net/lacework/tests/resources/fortiqa.yaml --html=report.html --tc_dest remote --testcenter_notes '{"target_url": "https://fortiqa.lacework.net"}'
+                    """
+                }
+            }
+        }
+    }
+    post {
+        always {
+            script{
+                archiveArtifacts artifacts: '**/*.html,**/results.xml'
+            }
+
+        }
+    }
+}

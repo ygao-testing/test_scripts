@@ -1,0 +1,70 @@
+pipeline {
+    agent {label 'ubuntu'}
+    stages {
+        stage('Prepare Environment') {
+            steps{
+                cleanWs()
+                sh """
+                    python3.12 -m venv ./venv
+                    . ./venv/bin/activate
+                    python -m pip install --upgrade pip
+                    git clone git@github.com:lacework-dev/fortiqa.git
+                    cd ${WORKSPACE}
+                    cd fortiqa
+                    git checkout ${BRANCH}
+                    python -m pip install -r pytest/fortiqa/tests/requirements.txt
+                    pip install pytest-testcenter
+                """
+            }
+        }
+        stage('Test') {
+            environment {
+                TESTCENTER_TOKEN = credentials('testcenter_lacework_fcsqa_token')
+                aws = credentials('471112895216')
+                lw_secret = credentials("fcsqagen2_yahoo_system_api_key_and_access")
+                lw_creds = credentials("fcsqagen2_yahoo_app_cred")
+                TF_VAR_PUBLIC_KEY = sh(returnStdout: true, script: "cat $HOME/.ssh/id_rsa.pub").trim()
+                TF_VAR_OWNER = "jenkins_ecr$BUILD_NUMBER"
+            }
+            steps {
+                sleep time: 30
+                writeFile file: 'fortiqa/pytest/fortiqa/tests/user_config.yaml', text: """
+---
+app:
+    workspace_id: "lacework_test"
+    customer:
+        lw_api_key: "$lw_secret_USR"
+        lw_secret: "$lw_secret_PSW"
+        account_name: "fortiqa"
+        user_email: "$lw_creds_USR"
+        user_email_password: "$lw_creds_PSW"
+        sub_account: "system"
+    aws_account:
+        aws_account_id: "471112895216"
+        aws_access_key_id: "$AWS_ACCESS_KEY_ID"
+        aws_secret_access_key: "$AWS_SECRET_ACCESS_KEY"
+"""
+                script {
+                    sh """
+                        cd ${WORKSPACE}
+                        . ./venv/bin/activate
+                        cd fortiqa
+                        cat pytest/fortiqa/tests/user_config.yaml
+                        git checkout ${BRANCH}
+                        cd pytest/fortiqa/tests
+                        pytest e2e/ecr -s -vv --durations=0 --html=report.html --self-contained-html --junitxml=results.xml --tc_dest remote --testcenter_notes '{"target_url": "https://fortiqa.lacework.net"}' | tee pytest_output.log
+                    """
+                }
+            }
+        }
+    }
+    post {
+        always {
+            script{
+                archiveArtifacts artifacts: '**/*.html,**/results.xml,**.log'
+                junit '**/results.xml'
+            }
+
+        }
+    }
+}

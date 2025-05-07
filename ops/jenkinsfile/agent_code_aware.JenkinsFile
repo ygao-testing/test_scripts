@@ -8,7 +8,7 @@ pipeline {
                     python3.12 -m venv ./venv
                     . ./venv/bin/activate
                     python -m pip install --upgrade pip
-                    git clone git@github.com:ygao-testing/test_scripts.git
+                    git clone git@github.com:lacework-dev/fortiqa.git
                     cd ${WORKSPACE}
                     cd fortiqa
                     git checkout ${BRANCH}
@@ -20,11 +20,11 @@ pipeline {
         stage('Test') {
             environment {
                 TESTCENTER_TOKEN = credentials('testcenter_lacework_fcsqa_token')
-                aws = credentials('886436945382')
-                lw_secret = credentials("fcsqagen2_yahoo_system_e2e_api_key_and_access")
+                aws = credentials('471112895216')
+                lw_secret = credentials("fcsqagen2_yahoo_system_api_key_and_access")
                 lw_creds = credentials("fcsqagen2_yahoo_app_cred")
                 TF_VAR_PUBLIC_KEY = sh(returnStdout: true, script: "cat $HOME/.ssh/id_rsa.pub").trim()
-                TF_VAR_OWNER = "jenkins_agents$BUILD_NUMBER"
+                TF_VAR_OWNER = "jenkins_agentcaa$BUILD_NUMBER"
                 GCP_CREDS = credentials('GCP_SERVICE_ACCOUNT_CREDS')
                 ARM_CLIENT_ID = credentials('ARM_CLIENT_ID')
                 ARM_CLIENT_SECRET = credentials('ARM_CLIENT_SECRET')
@@ -43,17 +43,15 @@ app:
         account_name: "fortiqa"
         user_email: "$lw_creds_USR"
         user_email_password: "$lw_creds_PSW"
-        sub_account: "system-e2e"
+        sub_account: "system"
     aws_account:
-        aws_account_id: "886436945382"
+        aws_account_id: "471112895216"
         aws_access_key_id: "$AWS_ACCESS_KEY_ID"
         aws_secret_access_key: "$AWS_SECRET_ACCESS_KEY"
 """
                 script {
-                    def windows_list = windows_tf_modules.split(',').collect { it.trim() } as List
                     def supported_csps = cloud_platforms.split(',').collect { it.trim() } as List
                     def linux_list = linux_tf_modules.split(',').collect { it.trim() } as List
-                    List modified_windows_list = windows_list.collect{ '\\"' + it + '\\"'}
                     List modified_supported_csps = supported_csps.collect{ '\\"' + it + '\\"'}
                     List modified_linux_list = linux_list.collect{ '\\"' + it + '\\"'}
                     sh """
@@ -64,11 +62,10 @@ app:
                         git checkout ${BRANCH}
                         export GOOGLE_APPLICATION_CREDENTIALS=${GCP_CREDS}
                         cd pytest/fortiqa/tests
-                        sed -i "s/windows_tf_modules: list = \\[.*\\]/windows_tf_modules: list = ${modified_windows_list}/" e2e/agents/host_versions.py
                         sed -i "s/supported_csps: list = \\[.*\\]/supported_csps: list = ${modified_supported_csps}/" e2e/agents/host_versions.py
                         sed -i -z "s/linux_tf_modules: list = \\[.*\\]/linux_tf_modules: list = ${modified_linux_list}/" e2e/agents/host_versions.py
                         cat e2e/agents/host_versions.py
-                        pytest e2e/agents/ -s -vv --durations=0 --html=report.html --self-contained-html --junitxml=results.xml --tc_dest remote --testcenter_notes '{"target_url": "https://fortiqa.lacework.net"}' | tee pytest_output.log
+                        pytest e2e/agent_caa/ -s -vv --durations=0 --html=report.html --self-contained-html --junitxml=results.xml --tc_dest remote --testcenter_notes '{"target_url": "https://fortiqa.lacework.net"}' | tee pytest_output.log
                     """
                 }
             }

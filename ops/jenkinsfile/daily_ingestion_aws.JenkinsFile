@@ -1,0 +1,136 @@
+pipeline {
+    agent {label 'docker_agent'}
+    stages {
+         // Debug stage to confirm the Jenkinsfile and branch
+        stage('Jenkinsfile Debug Info') {
+            steps {
+                script {
+                    echo "Running Jenkinsfile from BRANCH: ${BRANCH}"
+
+                }
+            }
+        }
+
+        stage('Prepare Environment') {
+            steps{
+                cleanWs()
+                sh """
+                    python3.12 -m venv ./venv
+                    . ./venv/bin/activate
+                    python -m pip install --upgrade pip
+                    git clone git@github.com:lacework-dev/fortiqa.git
+                    cd ${WORKSPACE}
+                    cd fortiqa
+                    git checkout ${BRANCH}
+                    python -m pip install -r pytest/fortiqa/tests/requirements.txt
+                    pip install pytest-testcenter
+                """
+            }
+        }
+        stage('Test') {
+            environment {
+                TESTCENTER_TOKEN = credentials('testcenter_lacework_fcsqa_token')
+                aws = credentials('886436945382')
+                lw_creds = credentials("fcsqagen2_yahoo_app_cred")
+                TF_VAR_PUBLIC_KEY = sh(returnStdout: true, script: "cat $HOME/.ssh/id_rsa.pub").trim()
+                TF_VAR_OWNER = "jenkins-ingestion-$BUILD_NUMBER"
+            }
+            steps {
+
+                sleep time: 30
+                script {
+
+                    // Set Build Display Name (Shows in Build History)
+                    currentBuild.displayName = "#${BUILD_NUMBER} - ${ACCOUNT_NAME} - ${BRANCH}"
+                    // Set Build Description (Shows in Build Details)
+                    currentBuild.description = """
+                    Account: ${ACCOUNT_NAME}
+                    Branch: ${BRANCH}
+                    """
+                    // Determine values based on ACCOUNT_NAME
+                    def lw_secret_id = (ACCOUNT_NAME == 'fortiqa.spork.corp')
+                        ? 'spork-fcsqagen2_yahoo_system_e2e_spork-api_key_and_access'
+                        : 'fcsqagen2_yahoo_system_e2e_api_key_and_access'
+
+                    def SUB_ACCOUNT = (ACCOUNT_NAME == 'fortiqa.spork.corp')
+                        ? 'SYSTEM-E2E-SPORK'
+                        : 'system-e2e'
+
+                    def TARGET_URL = (ACCOUNT_NAME == 'fortiqa.spork.corp')
+                        ? "https://fortiqa.spork.corp.lacework.net"
+                        : "https://fortiqa.lacework.net"
+
+                    def lw_secret_usr = ""
+                    def lw_secret_psw = ""
+                    echo "Using lw_secret_id: ${lw_secret_id}"
+                    //Only use `withCredentials()` for retrieving the username & password
+                    withCredentials([usernamePassword(credentialsId: lw_secret_id, usernameVariable: 'LW_SECRET_USR', passwordVariable: 'LW_SECRET_PSW')]) {
+                         echo "Using lw_secret_usr: ${env.LW_SECRET_USR}"
+                         echo "Using lw_secret_psw: (masked)"
+                         lw_secret_usr = "${env.LW_SECRET_USR}"
+                         lw_secret_psw = "${env.LW_SECRET_PSW}"
+                    }
+
+                    // Debugging output
+
+                    echo "Using lw_secret_usr: ${lw_secret_usr}"
+                    echo "using ACCOUNT_NAME: ${ACCOUNT_NAME}"
+                    echo "Using SUB_ACCOUNT: ${SUB_ACCOUNT}"
+                    echo "Using TARGET_URL: ${TARGET_URL}"
+
+
+
+                    // Write configuration file inside script block
+                    writeFile file: 'fortiqa/pytest/fortiqa/tests/user_config.yaml', text: """
+---
+app:
+    workspace_id: "lacework_test"
+    customer:
+        lw_api_key: "$lw_secret_usr"
+        lw_secret: "$lw_secret_psw"
+        account_name: "$ACCOUNT_NAME"
+        user_email: "$lw_creds_USR"
+        user_email_password: "$lw_creds_PSW"
+        sub_account: "$SUB_ACCOUNT"
+    aws_account:
+        aws_account_id: "886436945382"
+        aws_access_key_id: "$AWS_ACCESS_KEY_ID"
+        aws_secret_access_key: "$AWS_SECRET_ACCESS_KEY"
+        aws_terraform_s3_backend: "terraform-state-e2e-886436945382"
+        aws_terrafrom_s3_backend_region: "us-east-2"
+"""
+
+                    //  Run the tests after writing the config file
+                    echo "About to execute the shell script..."
+
+                    sh """
+                        echo "Entering test execution block..."
+                        cd ${WORKSPACE}
+                        . ./venv/bin/activate
+                        cd fortiqa
+                        git checkout ${BRANCH}
+                        cd pytest/fortiqa/tests
+                        echo "Starting test execution..."
+                        set -x  # Print each command before execution
+                        pytest e2e/ingestion/aws --collect-only -q
+                        pytest e2e/ingestion/aws -s -vv -rA --html=report_daily_e2e_ingestion.html --self-contained-html --junitxml=results_daily_e2e_ingestion.xml --tc_dest remote --testcenter_notes '{\"target_url\": \"${TARGET_URL}\"}' | tee pytest_output_daily_e2e_ingestion.log
+                        echo " Test execution completed!"
+                    """
+                    echo "Shell script execution completed!"
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            script{
+                // Archive the test results
+                archiveArtifacts artifacts: 'fortiqa/pytest/fortiqa/tests/report_daily_e2e_ingestion.html, fortiqa/pytest/fortiqa/tests/results_daily_e2e_ingestion.xml, fortiqa/pytest/fortiqa/tests/pytest_output_daily_e2e_ingestion.log'
+                // Publish JUnit test results in Jenkins
+                junit '**/results_daily_e2e_ingestion.xml'
+            }
+
+        }
+    }
+}

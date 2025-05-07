@@ -1,0 +1,167 @@
+# This workflow runs all GUI related test cases.
+name: Daily - GUI regression test
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_subfolders:
+        description: 'Test folders (e.g."alerts,explorer"). Leave empty to run all tests.'
+        type: string
+        required: true
+        default: "alerts,attack_path_top_work_items,aws_cloudtrail,azure_activity_log,dashboard,explorer,gcp_audit_log,resource_inventory,settings,vulnerabilities_containers,vulnerabilities_host,vulnerabilities_new_vulnerabilities,workloads_containers,workloads_hosts,workloads_kubernetes"
+      browser:
+        description: 'Choose Browser'
+        type: choice
+        required: true
+        default: 'chrome'
+        options:
+          - 'chrome'
+          - 'firefox'
+          - 'edge'
+      browser_version:
+        description: 'Browser Version'
+        required: true
+        default: 'latest'
+      session_timeout:
+        description: 'Page Load Timeout. e.g."10" for 10 sec'
+        type: number
+        required: true
+        default: 60
+      flags:
+        description: 'Pytest Flags'
+        required: false
+        default: '--reruns 1 -m sanity'
+  schedule:
+    - cron: '30 */2 * * *'
+
+jobs:
+  gui_regression_tests:
+    runs-on: arc-runner-lacework-dev-generic-lightweight
+
+    steps:
+      - name: Set Default Values If Not Provided
+        run: |
+          echo "TEST_SUBFOLDERS=${{ inputs.test_subfolders || 'alerts,attack_path_top_work_items,aws_cloudtrail,azure_activity_log,dashboard,explorer,gcp_audit_log,resource_inventory,settings,vulnerabilities_containers,vulnerabilities_host,vulnerabilities_new_vulnerabilities,workloads_containers,workloads_hosts,workloads_kubernetes' }}" >> $GITHUB_ENV
+          echo "BROWSER=${{ inputs.browser || 'chrome' }}" >> $GITHUB_ENV
+          echo "BROWSER_VERSION=${{ inputs.browser_version || 'latest' }}" >> $GITHUB_ENV
+          echo "SESSION_TIMEOUT=${{ inputs.session_timeout || 60 }}" >> $GITHUB_ENV
+          echo "FLAGS=${{ inputs.flags || '--reruns 1' }}" >> $GITHUB_ENV
+
+      - name: Check env variables
+        run: |
+          echo "TEST_SUBFOLDERS: $TEST_SUBFOLDERS"
+          echo "BROWSER: $BROWSER"
+          echo "BROWSER_VERSION: $BROWSER_VERSION"
+          echo "SESSION_TIMEOUT: $SESSION_TIMEOUT"
+          echo "FLAGS: $FLAGS"
+
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+
+      - name: Show current branch
+        run: git branch --show-current
+
+      - name: Set up Python 3.12.3
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12.3'
+
+      - name: Get current runner IP
+        run: |
+          export RUNNER_IP=$(hostname -I | awk '{print $1}')
+          echo "Current Runner IP is: $RUNNER_IP"
+          echo "RUNNER_IP=$RUNNER_IP" >> $GITHUB_ENV
+
+      - name: Check current working directory
+        run: pwd
+
+      - name: Print GitHub workspace directory
+        run: |
+          echo "WORKSPACE_DIR=${{ github.workspace }}" >> $GITHUB_ENV
+
+      - name: Run Selenium Standalone Chrome Container
+        run: |
+          docker pull selenium/standalone-$BROWSER:$BROWSER_VERSION
+          docker run -d --privileged -p 4444:4444 \
+            --name selenium --shm-size=2g selenium/standalone-$BROWSER:$BROWSER_VERSION
+          sleep 10
+          docker images
+          docker ps -al
+          docker logs selenium
+          docker inspect selenium
+          curl -v http://localhost:4444/status
+
+      - name: Create virtual environment and install dependencies
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          python -m pip install --upgrade pip
+          python -m pip install -r pytest/fortiqa/tests/requirements.txt
+
+      - name: Create user_config.yaml
+        run: |
+          cat <<EOF > pytest/fortiqa/tests/user_config.yaml
+          app:
+            workspace_id: "lacework_gui_test"
+            customer:
+                lw_api_key: "${{ secrets.FCSQA_LW_API_KEY }}"
+                lw_secret: "${{ secrets.FCSQA_LW_SECRET }}"
+                account_name: "fortiqa"
+                user_email: "fcsqagen2@yahoo.com"
+                user_email_password: "${{ secrets.FCSQA_USER_EMAIL_PASSWORD }}"
+                sub_account: "system"
+          ui:
+            default_implicit_wait: 10
+          EOF
+
+      - name: Capture and print test start time
+        run: |
+          test_start_time=$(date +'%Y-%m-%d %H-%M-%S')
+          echo "test_start_time=$test_start_time" >> $GITHUB_ENV
+          echo "Test started at: $test_start_time"
+
+      - name: Run Pytest tests
+        run: |
+          BASE_PATH="ui/tests/"
+
+          if [ -z "$TEST_SUBFOLDERS" ]; then
+            TEST_FOLDERS=$BASE_PATH
+            echo "No subfolders specified. Running all tests in '$BASE_PATH'."
+          else
+            TEST_FOLDERS=$(echo $TEST_SUBFOLDERS | sed "s|\([^,]*\)|$BASE_PATH\1|g" | tr ',' ' ')
+            echo "Running tests in folders: $TEST_FOLDERS"
+          fi
+
+          source .venv/bin/activate
+          cd pytest/fortiqa/tests
+          pytest $TEST_FOLDERS $FLAGS --collect-only -q
+          pytest $TEST_FOLDERS $FLAGS -s -vv -rA --html=report_gui_regression.html --self-contained-html --junitxml=results_gui_regression.xml | tee pytest_output_gui_regression.log
+          test ${PIPESTATUS[0]} -eq 0
+
+      - name: Capture and print test end time
+        if: always()
+        run: |
+          test_end_time=$(date +'%Y-%m-%d %H-%M-%S')
+          echo "test_end_time=$test_end_time" >> $GITHUB_ENV
+          echo "Test ended at: $test_end_time"
+
+      - name: Publish all test results
+        if: always()
+        uses: pmeier/pytest-results-action@v0.7.1
+        with:
+          path: pytest/fortiqa/tests/results_gui_regression.xml
+          summary: true
+          display-options: pfEXxs
+          title: Complete Test Results
+          fail-on-empty: true
+
+      - name: Archive test results  #upload the test result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Test-Results-${{ env.test_start_time }}-to-${{ env.test_end_time }}
+          path: |
+            pytest/fortiqa/tests/report_gui_regression.html
+            pytest/fortiqa/tests/results_gui_regression.xml
+            pytest/fortiqa/tests/lacework_test.log
+            pytest/fortiqa/tests/pytest_output_gui_regression.log

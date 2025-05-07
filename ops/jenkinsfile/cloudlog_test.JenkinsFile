@@ -1,0 +1,87 @@
+pipeline {
+    agent {label 'docker_agent'}
+    stages {
+        stage('Prepare Environment') {
+            steps{
+                cleanWs()
+                sh """
+                    python3.12 -m venv ./venv
+                    . ./venv/bin/activate
+                    python -m pip install --upgrade pip
+                    git clone git@github.com:lacework-dev/fortiqa.git
+                    cd ${WORKSPACE}
+                    cd fortiqa
+                    git checkout ${BRANCH}
+                    python -m pip install -r pytest/fortiqa/tests/requirements.txt
+                    pip install pytest-testcenter
+                """
+            }
+        }
+        stage('Test') {
+            environment {
+                TESTCENTER_TOKEN = credentials('testcenter_lacework_fcsqa_token')
+                aws = credentials('124355665329')
+                azure_secret = credentials('AZURE_CREDENTIALS_5943f937')
+                lw_secret = credentials("fcsqagen2_yahoo_system_api_key_and_access")
+                lw_creds = credentials("fcsqagen2_yahoo_app_cred")
+                TF_VAR_PUBLIC_KEY = sh(returnStdout: true, script: "cat $HOME/.ssh/id_rsa.pub").trim()
+                TF_VAR_OWNER = "jenkins_logs$BUILD_NUMBER"
+            }
+            steps {
+                script {
+                    withCredentials([
+                            file(credentialsId:env.GCP_CREDENTIALS, variable: 'gcp_credentials'),
+                        ]) {
+                        sh "cp $gcp_credentials fortiqa/pytest/fortiqa/tests/e2e/cloud_logs/gcp_auditlog/credentials.json"
+                    }
+                    sleep time: 30
+                    currentBuild.displayName = "#${BUILD_NUMBER} - ${PLATFORM} - ${BRANCH}"
+                    currentBuild.description = """
+                    CloudLogs: ${PLATFORM}
+                    Branch: ${BRANCH}
+                    """
+                    writeFile file: 'fortiqa/pytest/fortiqa/tests/user_config.yaml', text: """
+---
+app:
+    workspace_id: "lacework_test"
+    customer:
+        lw_api_key: "$lw_secret_USR"
+        lw_secret: "$lw_secret_PSW"
+        account_name: "fortiqa"
+        user_email: "$lw_creds_USR"
+        user_email_password: "$lw_creds_PSW"
+        sub_account: "system"
+    aws_account:
+        aws_account_id: "124355665329"
+        aws_access_key_id: "$AWS_ACCESS_KEY_ID"
+        aws_secret_access_key: "$AWS_SECRET_ACCESS_KEY"
+    azure_account:
+        tenant_id: "942b80cd-1b14-42a1-8dcf-4b21dece61ba"
+        client_id: "$azure_secret_USR"
+        client_secret: "$azure_secret_PSW"
+        subscription_id: "5943f937-7406-4ee7-94b4-069ae7ee2af3"
+"""             }
+                script {
+                    sh """
+                        cd ${WORKSPACE}
+                        . ./venv/bin/activate
+                        cd fortiqa
+                        cat pytest/fortiqa/tests/user_config.yaml
+                        git checkout ${BRANCH}
+                        cd pytest/fortiqa/tests
+                        pytest e2e/cloud_logs/${PLATFORM} -s -vv --durations=0 --html=report.html --self-contained-html --junitxml=results_cloudlogs.xml --tc_dest remote --testcenter_notes '{"target_url": "https://fortiqa.lacework.net"}' | tee pytest_output.log
+                    """
+                }
+            }
+        }
+    }
+    post {
+        always {
+            script{
+                archiveArtifacts artifacts: '**/*.html,**/results_cloudlogs.xml,**/pytest_output.log'
+                junit '**/results_cloudlogs.xml'
+            }
+
+        }
+    }
+}
