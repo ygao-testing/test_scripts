@@ -7,10 +7,13 @@ pipeline {
                 sh """
                     python3.12 -m venv ./venv
                     . ./venv/bin/activate
+                    python -m pip install --upgrade pip
                     git clone git@github.com:ygao-testing/test_scripts.git
                     cd ${WORKSPACE}
                     cd test_scripts
                     git checkout ${BRANCH}
+                    python -m pip install -r pytest/fortiqa/tests/requirements.txt
+                    pip install pytest-testcenter
                 """
             }
         }
