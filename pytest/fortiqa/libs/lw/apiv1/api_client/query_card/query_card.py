@@ -16,7 +16,7 @@ class QueryCard:
         Get all query cards info
         :return: Response
         """
-        log.info("get_all_query_cards()")
+        log.debug("get_all_query_cards()")
         response = self._user_api.get(url=f"{self._api_url}/catalog")
         return response
 
@@ -26,7 +26,7 @@ class QueryCard:
         :param card_name: Name of the query card
         :return: Response
         """
-        log.info(f"get_query_card_schema() for {card_name=}")
+        log.debug(f"get_query_card_schema() for {card_name=}")
         response = self._user_api.post(url=f"{self._api_url}/schema/{card_name}")
         return response
 
@@ -37,7 +37,7 @@ class QueryCard:
         :param payload: Query payload
         :return: Response
         """
-        log.info(f"exec_query_card() for {card_name=}")
+        log.debug(f"exec_query_card() for {card_name=}")
         response = self._user_api.post(url=f"{self._api_url}/query/{card_name}", payload=payload)
         return response
 
@@ -52,7 +52,7 @@ class QueryCard:
             requests.Response: The response object from the POST request containing
                             the latest ingestion period timestamps.
         """
-        log.info("Get explorer last update time")
+        log.debug("Get explorer last update time")
         response = self._user_api.post(url=f"{self._api_url}/query/SecurityGraph_LatestTimestamp", payload={})
         log.info(response.json())
         return response

@@ -117,5 +117,5 @@ class GraphQLHelper:
                 }
             })
 
-        logger.info(f"Generated payload: {json.dumps(default_template, indent=2)}")
+        logger.debug(f"Generated payload: {json.dumps(default_template, indent=2)}")
         return default_template

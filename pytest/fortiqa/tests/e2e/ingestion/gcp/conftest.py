@@ -11,6 +11,7 @@ from dataclasses import asdict
 from datetime import datetime, timedelta, timezone
 from fortiqa.tests.e2e.ingestion.gcp.tf_moduels import e2e_gcp_tf_modules
 from fortiqa.libs.lw.apiv1.api_client.identity.identity import IdentityV1
+from fortiqa.libs.lw.apiv1.api_client.identity_provider.identity_provider import IdentityProviderV1
 from fortiqa.libs.helper.date_helper import iso_to_timestamp, datetime_to_timestamp, timestamp_to_datetime
 from fortiqa.tests.e2e.ingestion.gcp.identity.risk_mappings import GCP_IAM_TO_ROLE
 logger = logging.getLogger(__name__)
@@ -166,6 +167,22 @@ def gcp_env_variables(gcp_service_account) -> None:
         del os.environ['GOOGLE_APPLICATION_CREDENTIALS']
 
 
+@pytest.fixture(scope="session")
+def gcp_admin_service_account_from_env():
+    """Read creds from `GCP_ADMIN_SERVICE_ACCOUNT_CREDS` environment variable.
+    Returns:
+        Dictionary containing the admin service account credentials.
+    """
+    assert 'GCP_ADMIN_SERVICE_ACCOUNT_CREDS' in os.environ, "GCP_ADMIN_SERVICE_ACCOUNT_CREDS is not set"
+    cred_path = os.environ['GCP_ADMIN_SERVICE_ACCOUNT_CREDS']
+    with open(cred_path, 'r') as f:
+        yield json.load(f)
+
+    # Cleanup: Remove the environment variable
+    if 'GCP_ADMIN_SERVICE_ACCOUNT_CREDS' in os.environ:
+        del os.environ['GCP_ADMIN_SERVICE_ACCOUNT_CREDS']
+
+
 def apply_tf_modules(module_list: list[str], module_root: str, bucket_name: str, region: str, env: str, labels: dict | None = None) -> dict[str, dict]:
     """Deploys a list of Terraform modules with dynamic backend configuration and resource labeling.
 
@@ -271,6 +288,52 @@ def pytest_configure(config):
     """
     config._tf_e2e_gcp_resources = {}
     config._tf_e2e_gcp_resources_destroyed = False
+
+
+@pytest.fixture(scope="session")
+def gcp_identity_provider_integration(api_v1_client, gcp_admin_service_account_from_env):
+    """
+    Pytest fixture to integrate GCP identity provider.
+
+    This fixture:
+        - Integrates a GCP identity provider using the provided credentials.
+        - Yields the integration ID (INTG_GUID) of the integrated identity provider.
+        - Cleans up the integrated identity provider after the session.
+    """
+    logger.info("start to integrate identity provider")
+    payload = {
+        "TYPE": "GOOGLE_IDENTITY",
+        "ENABLED": 1,
+        "IS_ORG": 0,
+        "NAME": f"Lacework CIEM GCP {random_id}",
+        "DATA": {
+            "CREDENTIALS": {
+                "CLIENT_ID": gcp_admin_service_account_from_env["client_id"],
+                "PRIVATE_KEY_ID": gcp_admin_service_account_from_env["private_key_id"],
+                "CLIENT_EMAIL": gcp_admin_service_account_from_env["client_email"],
+                "PRIVATE_KEY": gcp_admin_service_account_from_env["private_key"]
+            },
+            "CUSTOMER_ID": "C00tdsonw"
+        }
+    }
+    INTG_GUID = None
+    try:
+        response = IdentityProviderV1(api_v1_client).integrate_identity_provider(payload)
+        resp_json = response.json()
+        if resp_json.get("ok") and resp_json.get("data") and len(resp_json["data"]) > 0:
+            INTG_GUID = resp_json["data"][0].get("INTG_GUID")
+            logger.info(f"Successfully integrated identity provider: {INTG_GUID}")
+        yield datetime.now(timezone.utc)
+    except Exception as e:
+        logger.error(f"Failed to integrate identity provider: {e}")
+        yield None
+    finally:
+        if INTG_GUID:
+            try:
+                IdentityProviderV1(api_v1_client).delete_identity_provider(INTG_GUID)
+                logger.info(f"Successfully deleted identity provider integration: {INTG_GUID}")
+            except Exception as e:
+                logger.error(f"Failed to delete identity provider integration {INTG_GUID}: {e}")
 
 
 @pytest.fixture(scope='session', autouse=True)
@@ -525,3 +588,38 @@ def pytest_sessionfinish(session, exitstatus):
 def on_board_agentless_aws_account(gcp_service_account, api_v1_client, e2e_gcp_resources):
     """Fixture to creates/deletes GCP Agentless Configuration integration"""
     yield gcp_service_account  # TODO: Implement this method
+
+
+@pytest.fixture(scope="session")
+def wait_for_gcp_identity_provider_ingestion(api_v1_client, gcp_service_account, gcp_identity_provider_integration) -> dict[str, str] | None:
+    """Pytest fixture that waits for daily collection to complete for GCP
+
+    This fixture uses the 'api_v1_client' fixture and 'GCP' as the provider
+    to call 'get_ingestion_period_after_daily_collection'. If the next collection is more than 2 hours away,
+    it raises an exception. If the collection completes within 4 hours and 30 minutes,
+    it returns a dictionary with 'startTime' and 'endTime'; otherwise, an exception is raised.
+    Note:
+        - The onboarded_GCP_account fixture can be  used to onboard and clean up the GCP account
+          before and after tests. If onboarding logic is needed in the future, you can reintroduce it as
+          an argument to this fixture and ensure proper onboarding/removal in your test flow.
+
+
+    Args:
+        api_v1_client: Fixture that provides an instance of `ApiV1Client` for interacting
+                       with the Lacework API v1.
+    Returns:
+        dict[str, str] | None: A dictionary with 'startTime' and 'endTime' if the collection
+                               completes successfully. Returns None if the collection does
+                               not complete as expected.
+
+    """
+    integration_time = gcp_identity_provider_integration
+    identity_v1 = IdentityV1(api_v1_client)
+    update_completed = identity_v1.check_for_gcp_user_and_group_identity_properties_update(datetime_to_timestamp(integration_time), org_name=gcp_service_account.org_name, timeout_seconds=14400)
+    if not update_completed:
+        raise TimeoutError("User and group identity properties update did not complete within the timeout.")
+
+    return {
+        "start_time_range": datetime_to_timestamp(integration_time),
+        "end_time_range": datetime_to_timestamp(datetime.now(timezone.utc))
+    }

@@ -17,10 +17,23 @@ from fortiqa.tests.e2e.integrations.cloud_accounts.helpers import generate_and_r
 from fortiqa.libs.aws.cloudformation import CloudformationHelper
 from fortiqa.libs.aws.ec2 import EC2Helper
 from fortiqa.libs.helper.winrm_helper import WinRmHelper
+from fortiqa.libs.lw.apiv1.helpers.agentless_helper import AgentlessHelper
+from fortiqa.libs.lw.apiv1.helpers.vulnerabilities.host_vulnerabilities_helper import HostVulnerabilitiesHelper
+from fortiqa.libs.lw.apiv1.helpers.vulnerabilities.new_vulnerability_dashboard_helper import NewVulnerabilityDashboardHelper
 
 logger = logging.getLogger(__name__)
 random_id = ''.join(random.choices(string.ascii_letters, k=4))
 tf_owner_prefix = f'aless-{random_id.lower()}'
+
+
+@pytest.fixture(scope="package")
+def terraform_owner(os_version):
+    """Fixture to return the tf_owner value"""
+    if os_version in windows_tf_modules:
+        # For windows hosts, we need to a hostname with length less than 15 characters
+        os_version = os_version.split("windows")[-1]
+    owner = f"{tf_owner_prefix}-{os_version}"
+    return owner.replace("_", "-").replace('.', '')
 
 
 @pytest.fixture(scope='package')
@@ -103,7 +116,7 @@ def apply_tf_modules(module_list: list[str], module_root: str) -> dict[str, dict
         except Exception:
             logger.exception(f'Failed to deploy TF module {tf_module}')
         finally:
-            hosts[tf_module] = {'tf': tf, 'deployment_time': time.monotonic(), 'deployment_timestamp': datetime.now()}
+            hosts[tf_module] = {'tf': tf, 'output': tf.output(), 'deployment_time': time.monotonic(), 'deployment_timestamp': datetime.now()}
     return hosts
 
 
@@ -116,7 +129,7 @@ def destroy_tf_modules(tf_modules: dict) -> None:
     """
     for tf_module in tf_modules:
         try:
-            print(f'Destroying {tf_module=}')
+            logger.debug(f'Destroying {tf_module=}')
             os_version = tf_module
             if os_version in windows_tf_modules:
                 os_version = os_version.split("windows")[-1]
@@ -218,22 +231,10 @@ def os_version(request):
     return request.param
 
 
-@pytest.fixture(scope='package', params=linux_tf_modules)
-def linux_os_version(request):
-    """Fixture returns one of the supported Linux OS versions"""
-    return request.param
-
-
 @pytest.fixture(scope='package')
 def agent_host(os_version, all_agent_hosts):
     """Fixture returns details of deployed agent host based on OS version"""
     return all_agent_hosts.get(os_version)
-
-
-@pytest.fixture(scope='package')
-def linux_agent_host(linux_os_version, all_agent_hosts):
-    """Fixture returns details of deployed agent host based on OS version"""
-    return all_agent_hosts.get(linux_os_version)
 
 
 @pytest.fixture(scope='package')
@@ -246,3 +247,137 @@ def agent_host_tf_output(agent_host):
 def java_cve_packages(request):
     """Fixture to load Pacakge/CVE data"""
     return request.param
+
+
+@pytest.fixture(scope="function")
+def wait_until_host_is_added(request, api_v1_client, os_version, agent_host, agent_host_tf_output, on_board_agentless_aws_account):
+    """Fixture to wait until host is added inside the Agentless Dashboard"""
+    timeout = 18000
+    deployment_time = agent_host['deployment_time']
+    deployment_timestamp = agent_host['deployment_timestamp']
+    agent_host_instance_id = agent_host_tf_output['agent_host_instance_id']
+    try:
+        AgentlessHelper(api_v1_client, deployment_timestamp).wait_until_host_appear(instance_id=agent_host_instance_id, wait_until=deployment_time+timeout)
+        return datetime.now()
+    except TimeoutError as e:
+        logger.error(f"TimeoutError found: {e}, mark test cases xfail"
+                     f"Host is not added to the Agentless Dashboard"
+                     f"Current Time: {datetime.now()}")
+        request.node.add_marker(
+            pytest.mark.xfail(reason=f"{os_version} was not found in the Agentless Dashboard: {e}", run=False)
+        )
+        return None
+
+
+@pytest.fixture(scope="function")
+def wait_until_host_is_scanned(request, api_v1_client, os_version, agent_host, agent_host_tf_output, on_board_agentless_aws_account, wait_until_host_is_added):
+    """Fixture to wait until host is scanned inside the Agentless Dashboard"""
+    if not wait_until_host_is_added:
+        logger.error(f"{os_version} is not added to the Agentless Dashboard")
+        request.node.add_marker(
+            pytest.mark.xfail(reason=f"{os_version} was not added in the Agentless Dashboard", run=False)
+        )
+        return None
+    timeout = 18000
+    deployment_time = agent_host['deployment_time']
+    deployment_timestamp = agent_host['deployment_timestamp']
+    agent_host_instance_id = agent_host_tf_output['agent_host_instance_id']
+    try:
+        AgentlessHelper(api_v1_client, deployment_timestamp).wait_until_host_scanned(instance_id=agent_host_instance_id, wait_until=deployment_time+timeout)
+        return datetime.now()
+    except TimeoutError as e:
+        logger.error(f"TimeoutError found: {e}, mark test cases xfail"
+                     f"Host is not scanned in the Agentless Dashboard"
+                     f"Current Time: {datetime.now()}")
+        request.node.add_marker(
+            pytest.mark.xfail(reason=f"{os_version} was not scanned in the Agentless Dashboard: {e}", run=False)
+        )
+        return None
+
+
+@pytest.fixture(scope="function")
+def wait_until_host_has_any_vulnerability(request, api_v1_client, os_version, agent_host, agent_host_tf_output, on_board_agentless_aws_account, wait_until_host_is_scanned):
+    """Fixture to wait until host has more than 0 vulnerabilities"""
+    if not wait_until_host_is_scanned:
+        logger.error(f"{os_version} is not scanned in the Agentless Dashboard")
+        request.node.add_marker(
+            pytest.mark.xfail(reason=f"{os_version} was not scanned in the Agentless Dashboard", run=False)
+        )
+        return None
+    elif "alpine" in os_version:
+        request.node.add_marker(
+            pytest.mark.xfail(reason=f"{os_version} is not supported by Vulnerability dashboard", run=False)
+        )
+        return None
+    timeout = 18000
+    deployment_time = agent_host['deployment_time']
+    deployment_timestamp = agent_host['deployment_timestamp']
+    agent_host_instance_id = agent_host_tf_output['agent_host_instance_id']
+    try:
+        HostVulnerabilitiesHelper(api_v1_client, deployment_timestamp).wait_until_instance_has_vulnerability(agent_host_instance_id, wait_until=deployment_time+timeout)
+        return datetime.now()
+    except TimeoutError as e:
+        logger.error(f"TimeoutError found: {e}, mark test cases xfail"
+                     f"Host has no vulnerability in the old Vuln Dashboard"
+                     f"Current Time: {datetime.now()}")
+        request.node.add_marker(
+            pytest.mark.xfail(reason=f"{os_version} has 0 vulnerabilities in the old Vulnerability Dashboard: {e}", run=False)
+        )
+        return None
+
+
+@pytest.fixture(scope="function")
+def wait_until_host_is_added_to_new_vuln_dashboard(request, api_v1_client, os_version, agent_host, agent_host_tf_output, wait_until_host_is_scanned, on_board_agentless_aws_account):
+    """Fixture to wait until host is added to the new Vuln Dashboard"""
+    if not wait_until_host_is_scanned:
+        logger.error(f"{os_version} is not active in the Agentless Dashboard")
+        request.node.add_marker(
+            pytest.mark.xfail(reason=f"{os_version} was not scanned in the Agentless Dashboard", run=False)
+        )
+        return None
+    elif "alpine" in os_version:
+        request.node.add_marker(
+            pytest.mark.xfail(reason=f"{os_version} is not supported by Vulnerability dashboard", run=False)
+        )
+        return None
+    timeout = 15000
+    deployment_time = agent_host['deployment_time']
+    agent_host_instance_id = agent_host_tf_output['agent_host_instance_id']
+    deployment_timestamp = agent_host['deployment_timestamp']
+    try:
+        NewVulnerabilityDashboardHelper(api_v1_client, deployment_timestamp).wait_until_host_is_added(agent_host_instance_id, wait_until=deployment_time+timeout)
+        return datetime.now()
+    except TimeoutError as e:
+        logger.error(f"TimeoutError found: {e}, mark test cases xfail"
+                     f"Agent is not added to the new Vuln Dashboard"
+                     f"Current Time: {datetime.now()}")
+        request.node.add_marker(
+            pytest.mark.xfail(reason=f"{os_version} is not added to the new Vulnerability Dashboard: {e}", run=False)
+        )
+        return None
+
+
+@pytest.fixture(scope="function")
+def wait_until_host_has_any_vulnerability_in_new_vuln_dashboard(request, api_v1_client, os_version, agent_host, agent_host_tf_output, on_board_agentless_aws_account, wait_until_host_is_added_to_new_vuln_dashboard):
+    """Fixture to wait until host has more than 0 vulnerabilities in the new Vuln Dashboard"""
+    if not wait_until_host_is_added_to_new_vuln_dashboard:
+        logger.error(f"{os_version} is not added to the new Vuln Dashboard")
+        request.node.add_marker(
+            pytest.mark.xfail(reason=f"{os_version} is not added to the new Vuln Dashboard", run=False)
+        )
+        return None
+    timeout = 18000
+    deployment_time = agent_host['deployment_time']
+    deployment_timestamp = agent_host['deployment_timestamp']
+    agent_host_instance_id = agent_host_tf_output['agent_host_instance_id']
+    try:
+        NewVulnerabilityDashboardHelper(api_v1_client, deployment_timestamp).wait_until_instance_has_vuln_count(agent_host_instance_id, wait_until=deployment_time+timeout)
+        return datetime.now()
+    except TimeoutError as e:
+        logger.error(f"TimeoutError found: {e}, mark test cases xfail"
+                     f"Host has no vulnerability in the new Vuln Dashboard"
+                     f"Current Time: {datetime.now()}")
+        request.node.add_marker(
+            pytest.mark.xfail(reason=f"{os_version} has 0 vulnerabilities in the new Vulnerability Dashboard: {e}", run=False)
+        )
+        return None

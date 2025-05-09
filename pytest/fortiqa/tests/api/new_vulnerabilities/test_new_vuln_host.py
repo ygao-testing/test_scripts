@@ -439,6 +439,7 @@ def test_show_host_internal_ip(api_v1_client, internal_ip, operator):
     {"tag_name": "some_name", "tag_value": "some_value"},
     {"tag_name": "a"*128, "tag_value": "b"*256},
     {"tag_name": "spaces and + - = . _ : /", "tag_value": "spaces and + - = . _ : /"},
+    {"tag_name": "InstanceId", "tag_value": "i-1234566"}
 ])
 def test_show_host_machine_tag(api_v1_client, tag_key_pair):
     """

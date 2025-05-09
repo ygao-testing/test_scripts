@@ -18,8 +18,8 @@ class VulnerabilityObservation:
         :param payload: Payload to call the endpoint
         :return: Response
         """
-        log.info("serach_host_vulnerability_observations()")
-        log.info(f"Payload: {json.dumps(payload, indent=2)}")
+        log.debug("serach_host_vulnerability_observations()")
+        log.debug(f"Payload: {json.dumps(payload, indent=2)}")
         response = self._user_api.post(url=f"{self._api_url}/Hosts/search", payload=payload)
         return response
 
@@ -29,7 +29,7 @@ class VulnerabilityObservation:
         :param payload: payload to call the endpoint
         :return: Response
         """
-        log.info("serach_image_vulnerability_observations()")
-        log.info(f"Payload: {json.dumps(payload, indent=2)}")
+        log.debug("serach_image_vulnerability_observations()")
+        log.debug(f"Payload: {json.dumps(payload, indent=2)}")
         response = self._user_api.post(url=f"{self._api_url}/Images/search", payload=payload)
         return response

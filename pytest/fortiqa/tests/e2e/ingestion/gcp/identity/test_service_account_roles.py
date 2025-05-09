@@ -91,7 +91,7 @@ class TestIdentityGCPServiceAccountV1:
         # Extract GCP service account emails from Terraform output
         gcp_service_account_names = list(gcp_service_account_display_names.values())
 
-        logger.info(f"Expected GCP service account emails: {gcp_service_account_names}")
+        logger.info(f"Expected GCP service account names: {gcp_service_account_names}")
 
         # Compare service account emails from GCP with Lacework
         missing_accounts = set(gcp_service_account_names) - lacework_service_account_names
@@ -135,17 +135,24 @@ class TestIdentityGCPServiceAccountV1:
         # Extract IAM roles by policy from Terraform output
         service_account_identity_module = e2e_gcp_resources["service_account_identity"]["tf"]
         service_account_names = service_account_identity_module.output().get("service_account_names", {})
-
+        logger.info(f"Deployed GCP service accounts: {service_account_names}")
         # Extract role assignments from domain.tf analysis (roles defined in our Terraform)
-        # Service accounts with IAM admin role
+        # Service accounts with IAM write permissions
         gcp_iam_roles = GCP_RISKS_MAPPING["ALLOWS_IAM_WRITE"]
-        role_names = [GCP_IAM_TO_ROLE[role] for role in gcp_iam_roles]
-        iam_admin_accounts = [service_account_names.get(role) for role in role_names]
+        role_names = []
+        for role in gcp_iam_roles:
+            role_names.extend(GCP_IAM_TO_ROLE.get(role, []))
+
+        # Collect the emails of service accounts and match with principle id returned from lacework
+        iam_write_accounts = []
+        for role in role_names:
+            if role in service_account_names:
+                iam_write_accounts.append(service_account_names.get(role, "Unknown user account"))
 
         # Ensure at least one service account exists with a relevant role
-        assert iam_admin_accounts, "No service accounts with 'ALLOWS_IAM_WRITE' risk are deployed."
+        assert iam_write_accounts, "No service accounts with 'ALLOWS_IAM_WRITE' risk are deployed."
 
-        logger.info(f"Expected service accounts with 'ALLOWS_IAM_WRITE' risk: {iam_admin_accounts}")
+        logger.info(f"Expected service accounts with 'ALLOWS_IAM_WRITE' risk: {iam_write_accounts}")
 
         # Get ingestion start and end time from fixture
         time_range = wait_for_identity_properties_update_post_daily_ingestion_gcp
@@ -157,10 +164,10 @@ class TestIdentityGCPServiceAccountV1:
 
         # Define API query filters
         filters = {
+            "CIEM_Identities_Filter.PROVIDER": [{"value": "GCP", "filterGroup": "include"}],
             "CIEM_Identities_Filter.PROPERTIES_ARRAY": [
                 {"value": "ALLOWS_IAM_WRITE", "filterGroup": "include"}
             ],
-            "CIEM_Identities_Filter.PROVIDER": [{"value": "GCP", "filterGroup": "include"}],
             "CIEM_Identities_Filter.IDENTITY_TYPE": [{"value": "GCP_SERVICE_ACCOUNT", "filterGroup": "include"}],
             "CIEM_Identities_Filter.DOMAIN_ID": [{"value": project_id, "filterGroup": "include"}]
         }
@@ -172,8 +179,8 @@ class TestIdentityGCPServiceAccountV1:
         response_data = response.json().get("data", [])
         queried_accounts = {account["NAME"] for account in response_data}
 
-        # Validate all service accounts with IAM admin roles appear in the API response
-        missing_accounts = set(iam_admin_accounts) - queried_accounts
+        # Validate all service accounts with IAM write permissions appear in the API response
+        missing_accounts = set(iam_write_accounts) - queried_accounts
 
         assert not missing_accounts, (
             f"Failed to find all service accounts with 'ALLOWS_IAM_WRITE' risk within timeout period. "
@@ -213,12 +220,19 @@ class TestIdentityGCPServiceAccountV1:
         # Extract IAM roles by policy from Terraform output
         service_account_identity_module = e2e_gcp_resources["service_account_identity"]["tf"]
         service_account_names = service_account_identity_module.output().get("service_account_names", {})
-
+        logger.info(f"Deployed GCP service accounts: {service_account_names}")
         # Extract role assignments from domain.tf analysis (roles defined in our Terraform)
         # Service accounts with Storage Admin role
         gcp_iam_roles = GCP_RISKS_MAPPING["ALLOWS_STORAGE_WRITE"]
-        role_names = [GCP_IAM_TO_ROLE[role] for role in gcp_iam_roles]
-        storage_admin_accounts = [service_account_names.get(role) for role in role_names]
+        role_names = []
+        for role in gcp_iam_roles:
+            role_names.extend(GCP_IAM_TO_ROLE.get(role, []))
+
+        # Collect the emails of service accounts and match with principle id returned from lacework
+        storage_admin_accounts = []
+        for role in role_names:
+            if role in service_account_names:
+                storage_admin_accounts.append(service_account_names.get(role, "Unknown service account"))
 
         # Ensure at least one service account exists with a relevant role
         assert storage_admin_accounts, "No service accounts with 'ALLOWS_STORAGE_WRITE' risk are deployed."
@@ -234,10 +248,10 @@ class TestIdentityGCPServiceAccountV1:
 
         # Define API query filters
         filters = {
+            "CIEM_Identities_Filter.PROVIDER": [{"value": "GCP", "filterGroup": "include"}],
             "CIEM_Identities_Filter.PROPERTIES_ARRAY": [
                 {"value": "ALLOWS_STORAGE_WRITE", "filterGroup": "include"}
             ],
-            "CIEM_Identities_Filter.PROVIDER": [{"value": "GCP", "filterGroup": "include"}],
             "CIEM_Identities_Filter.IDENTITY_TYPE": [{"value": "GCP_SERVICE_ACCOUNT", "filterGroup": "include"}],
             "CIEM_Identities_Filter.DOMAIN_ID": [{"value": project_id, "filterGroup": "include"}]
         }
@@ -291,12 +305,19 @@ class TestIdentityGCPServiceAccountV1:
         # Extract IAM roles by policy from Terraform output
         service_account_identity_module = e2e_gcp_resources["service_account_identity"]["tf"]
         service_account_names = service_account_identity_module.output().get("service_account_names", {})
-
+        logger.info(f"Deployed GCP service accounts: {service_account_names}")
         # Extract role assignments from domain.tf analysis (roles defined in our Terraform)
         # Service accounts with Compute execution permissions
         gcp_iam_roles = GCP_RISKS_MAPPING["ALLOWS_COMPUTE_EXECUTE"]
-        role_names = [GCP_IAM_TO_ROLE[role] for role in gcp_iam_roles]
-        compute_execute_accounts = [service_account_names.get(role) for role in role_names]
+        role_names = []
+        for role in gcp_iam_roles:
+            role_names.extend(GCP_IAM_TO_ROLE.get(role, []))
+
+        # Collect the emails of service accounts and match with principle id returned from lacework
+        compute_execute_accounts = []
+        for role in role_names:
+            if role in service_account_names:
+                compute_execute_accounts.append(service_account_names.get(role, "Unknown user account"))
 
         # Ensure at least one service account exists with a relevant role
         assert compute_execute_accounts, "No service accounts with 'ALLOWS_COMPUTE_EXECUTE' risk are deployed."
@@ -313,10 +334,10 @@ class TestIdentityGCPServiceAccountV1:
 
         # Define API query filters
         filters = {
+            "CIEM_Identities_Filter.PROVIDER": [{"value": "GCP", "filterGroup": "include"}],
             "CIEM_Identities_Filter.PROPERTIES_ARRAY": [
                 {"value": "ALLOWS_COMPUTE_EXECUTE", "filterGroup": "include"}
             ],
-            "CIEM_Identities_Filter.PROVIDER": [{"value": "GCP", "filterGroup": "include"}],
             "CIEM_Identities_Filter.IDENTITY_TYPE": [{"value": "GCP_SERVICE_ACCOUNT", "filterGroup": "include"}],
             "CIEM_Identities_Filter.DOMAIN_ID": [{"value": project_id, "filterGroup": "include"}]
         }
@@ -370,12 +391,19 @@ class TestIdentityGCPServiceAccountV1:
         # Extract IAM roles by policy from Terraform output
         service_account_identity_module = e2e_gcp_resources["service_account_identity"]["tf"]
         service_account_names = service_account_identity_module.output().get("service_account_names", {})
-
+        logger.info(f"Deployed GCP service accounts: {service_account_names}")
         # Extract role assignments from domain.tf analysis (roles defined in our Terraform)
         # Service accounts with Storage read permissions
         gcp_iam_roles = GCP_RISKS_MAPPING["ALLOWS_STORAGE_READ"]
-        role_names = [GCP_IAM_TO_ROLE[role] for role in gcp_iam_roles]
-        storage_read_accounts = [service_account_names.get(role) for role in role_names]
+        role_names = []
+        for role in gcp_iam_roles:
+            role_names.extend(GCP_IAM_TO_ROLE.get(role, []))
+
+        # Collect the emails of user accounts and match with principle id returned from lacework
+        storage_read_accounts = []
+        for role in role_names:
+            if role in service_account_names:
+                storage_read_accounts.append(service_account_names.get(role, "Unknown user account"))
 
         # Ensure at least one service account exists with a relevant role
         assert storage_read_accounts, "No service accounts with 'ALLOWS_STORAGE_READ' risk are deployed."
@@ -392,10 +420,10 @@ class TestIdentityGCPServiceAccountV1:
 
         # Define API query filters
         filters = {
+            "CIEM_Identities_Filter.PROVIDER": [{"value": "GCP", "filterGroup": "include"}],
             "CIEM_Identities_Filter.PROPERTIES_ARRAY": [
                 {"value": "ALLOWS_STORAGE_READ", "filterGroup": "include"}
             ],
-            "CIEM_Identities_Filter.PROVIDER": [{"value": "GCP", "filterGroup": "include"}],
             "CIEM_Identities_Filter.IDENTITY_TYPE": [{"value": "GCP_SERVICE_ACCOUNT", "filterGroup": "include"}],
             "CIEM_Identities_Filter.DOMAIN_ID": [{"value": project_id, "filterGroup": "include"}]
         }
@@ -450,12 +478,19 @@ class TestIdentityGCPServiceAccountV1:
         # Extract IAM roles by policy from Terraform output
         service_account_identity_module = e2e_gcp_resources["service_account_identity"]["tf"]
         service_account_names = service_account_identity_module.output().get("service_account_names", {})
-
+        logger.info(f"Deployed GCP service accounts: {service_account_names}")
         # Extract role assignments from domain.tf analysis (roles defined in our Terraform)
         # Service accounts with Secret read permissions
         gcp_iam_roles = GCP_RISKS_MAPPING["ALLOWS_SECRETS_READ"]
-        role_names = [GCP_IAM_TO_ROLE[role] for role in gcp_iam_roles]
-        secrets_read_accounts = [service_account_names.get(role) for role in role_names]
+        role_names = []
+        for role in gcp_iam_roles:
+            role_names.extend(GCP_IAM_TO_ROLE.get(role, []))
+
+        # Collect the emails of user accounts and match with principle id returned from lacework
+        secrets_read_accounts = []
+        for role in role_names:
+            if role in service_account_names:
+                secrets_read_accounts.append(service_account_names.get(role, "Unknown user account"))
 
         # Ensure at least one service account exists with a relevant role
         assert secrets_read_accounts, "No service accounts with 'ALLOWS_SECRETS_READ' risk are deployed."
@@ -472,10 +507,10 @@ class TestIdentityGCPServiceAccountV1:
 
         # Define API query filters
         filters = {
+            "CIEM_Identities_Filter.PROVIDER": [{"value": "GCP", "filterGroup": "include"}],
             "CIEM_Identities_Filter.PROPERTIES_ARRAY": [
                 {"value": "ALLOWS_SECRETS_READ", "filterGroup": "include"}
             ],
-            "CIEM_Identities_Filter.PROVIDER": [{"value": "GCP", "filterGroup": "include"}],
             "CIEM_Identities_Filter.IDENTITY_TYPE": [{"value": "GCP_SERVICE_ACCOUNT", "filterGroup": "include"}],
             "CIEM_Identities_Filter.DOMAIN_ID": [{"value": project_id, "filterGroup": "include"}]
         }
@@ -530,12 +565,19 @@ class TestIdentityGCPServiceAccountV1:
         # Extract IAM roles by policy from Terraform output
         service_account_identity_module = e2e_gcp_resources["service_account_identity"]["tf"]
         service_account_names = service_account_identity_module.output().get("service_account_names", {})
-
+        logger.info(f"Deployed GCP service accounts: {service_account_names}")
         # Extract role assignments from domain.tf analysis (roles defined in our Terraform)
         # Service accounts with full admin roles
         gcp_iam_roles = GCP_RISKS_MAPPING["ALLOWS_FULL_ADMIN"]
-        role_names = [GCP_IAM_TO_ROLE[role] for role in gcp_iam_roles]
-        full_admin_accounts = [service_account_names.get(role) for role in role_names]
+        role_names = []
+        for role in gcp_iam_roles:
+            role_names.extend(GCP_IAM_TO_ROLE.get(role, []))
+
+        # Collect the emails of user accounts and match with principle id returned from lacework
+        full_admin_accounts = []
+        for role in role_names:
+            if role in service_account_names:
+                full_admin_accounts.append(service_account_names.get(role, "Unknown user account"))
 
         # Ensure at least one service account exists with a relevant role
         assert full_admin_accounts, "No service accounts with 'ALLOWS_FULL_ADMIN' risk are deployed."
@@ -552,10 +594,10 @@ class TestIdentityGCPServiceAccountV1:
 
         # Define API query filters
         filters = {
+            "CIEM_Identities_Filter.PROVIDER": [{"value": "GCP", "filterGroup": "include"}],
             "CIEM_Identities_Filter.PROPERTIES_ARRAY": [
                 {"value": "ALLOWS_FULL_ADMIN", "filterGroup": "include"}
             ],
-            "CIEM_Identities_Filter.PROVIDER": [{"value": "GCP", "filterGroup": "include"}],
             "CIEM_Identities_Filter.IDENTITY_TYPE": [{"value": "GCP_SERVICE_ACCOUNT", "filterGroup": "include"}],
             "CIEM_Identities_Filter.DOMAIN_ID": [{"value": project_id, "filterGroup": "include"}]
         }

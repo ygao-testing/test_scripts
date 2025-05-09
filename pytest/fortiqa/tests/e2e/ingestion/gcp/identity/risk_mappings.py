@@ -4,13 +4,23 @@ logger = logging.getLogger(__name__)
 
 # Define GCP IAM to role mapping
 GCP_IAM_TO_ROLE = {
-    "roles/editor": "role1",
-    "roles/storage.admin": "role2",
-    "roles/storage.objectViewer": "role3",
-    "roles/secretmanager.admin": "role4",
-    "roles/compute.admin": "role5",
-    "roles/cloudfunctions.admin": "role6",
-    "roles/owner": "role7",
+    "roles/editor": ["role1"],
+    "roles/storage.admin": ["role2"],
+    "roles/storage.objectViewer": ["role3"],
+    "roles/secretmanager.admin": ["role4"],
+    "roles/compute.admin": ["role5"],
+    "roles/cloudfunctions.admin": ["role6"],
+    "roles/owner": ["role7", "Zhenxiao Qi", "testgroup"],
+}
+
+# Pre-defined user accounts
+GCP_USER_ACCOUNT_EMAILS = {
+    "Zhenxiao Qi": "zhenxiao@autotest.staging.forticasb.com"
+}
+
+# Pre-defined groups
+GCP_GROUP_ACCOUNT_EMAILS = {
+    "testgroup": "testgroup@autotest.staging.forticasb.com"
 }
 
 # Define GCP risk mappings based on roles

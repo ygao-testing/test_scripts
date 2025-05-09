@@ -25,20 +25,20 @@ class HostVulnerabilitiesHelper:
 
     def list_all_vulnerability_hosts(self) -> list:
         """Helper function to list all hosts inside vulnerability page"""
-        logger.info("list_all_vulnerability_hosts()")
+        logger.debug("list_all_vulnerability_hosts()")
         payload = deepcopy(self.payload_template)
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="HostVuln_HostsSummaryAll_MV_NamedSet", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"All vulnerability hosts: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"All vulnerability hosts: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def list_all_cve_scanned(self) -> list:
         """Helper function to list all scanned CVEs"""
-        logger.info("list_all_cve_scanned()")
+        logger.debug("list_all_cve_scanned()")
         payload = deepcopy(self.payload_template)
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="HostVuln_LastEvalSummaryAllByCVE", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"All vulnerability cves: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"All vulnerability cves: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def fetch_cve_details(self, cve_id: str) -> list:
@@ -48,7 +48,7 @@ class HostVulnerabilitiesHelper:
 
         :return: CVE info
         """
-        logger.info(f"fetch_cve_details(), {cve_id}")
+        logger.debug(f"fetch_cve_details(), {cve_id}")
         payload = deepcopy(self.payload_template)
         payload['ParamInfo']['VULN_ID'] = cve_id
         payload['Filters'] = {
@@ -61,7 +61,7 @@ class HostVulnerabilitiesHelper:
         }
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="HostVuln_LastEvalSummaryAllByCVE_Details", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"{cve_id} details: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"{cve_id} details: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def fetch_host_associate_to_cve(self, cve_id: str) -> list:
@@ -71,7 +71,7 @@ class HostVulnerabilitiesHelper:
 
         :return: List of hosts info
         """
-        logger.info(f"fetch_host_associate_to_cve(), {cve_id}")
+        logger.debug(f"fetch_host_associate_to_cve(), {cve_id}")
         payload = deepcopy(self.payload_template)
         cve_info = self.fetch_cve_details(cve_id)
         if not cve_info:
@@ -83,7 +83,7 @@ class HostVulnerabilitiesHelper:
         payload['ParamInfo']['PACKAGE'] = package_name
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="HostVuln_HostsByCVEPackage", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"Hosts associate with {cve_id}: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"Hosts associate with {cve_id}: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def fetch_host_vulnerability_by_host_name(self, hostname: str) -> dict | None:
@@ -93,11 +93,11 @@ class HostVulnerabilitiesHelper:
         :param hostname: Hostname
         :return: Dictionary contains all info about the host, and its vulnerabilities
         """
-        logger.info(f"fetch_host_vulnerability_by_host_name() for {hostname}")
+        logger.debug(f"fetch_host_vulnerability_by_host_name() for {hostname}")
         all_hosts = self.list_all_vulnerability_hosts()
         for host in all_hosts:
             if host['HOST_NAME'] == hostname:
-                logger.info(f"{hostname} info: {host}")
+                logger.debug(f"{hostname} info: {host}")
                 return host
         logger.debug(f"Found no host with hostname = {hostname}")
         return None
@@ -109,11 +109,11 @@ class HostVulnerabilitiesHelper:
         :param instance_id: Instance ID
         :return: Dictionary contains all info about the host, and its vulnerabilities
         """
-        logger.info(f"fetch_host_vulnerability_by_instance_id() for {instance_id}")
+        logger.debug(f"fetch_host_vulnerability_by_instance_id() for {instance_id}")
         all_hosts = self.list_all_vulnerability_hosts()
         for host in all_hosts:
             if host.get('MACHINE_TAGS', {}).get('InstanceId') == instance_id:
-                logger.info(f"{instance_id} info: {host}")
+                logger.debug(f"{instance_id} info: {host}")
                 return host
         logger.debug(f"Found no host with instance_id = {instance_id}")
         raise Exception(f"Found no host with instance_id = {instance_id}")
@@ -125,7 +125,7 @@ class HostVulnerabilitiesHelper:
         :param hostname: Hostname
         :return: A list of dictionary contains all info about all vulnerable packages for a host
         """
-        logger.info(f"fetch_host_vulnerable_packages_by_hostname() for {hostname}")
+        logger.debug(f"fetch_host_vulnerable_packages_by_hostname() for {hostname}")
         host_info = self.fetch_host_vulnerability_by_host_name(hostname)
         if not host_info:
             logger.debug(f"Not found host with hostname = {hostname}")
@@ -136,7 +136,7 @@ class HostVulnerabilitiesHelper:
         payload['ParamInfo']['EVAL_GUID'] = eval_guid
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="HostVuln_VulnDetailsByEvalGuid_ByPackage", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"All vulnerable packages for {hostname}: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"All vulnerable packages for {hostname}: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def fetch_host_vulnerable_packages_by_instance_id(self, instance_id: str) -> list:
@@ -146,7 +146,7 @@ class HostVulnerabilitiesHelper:
         :param instance_id: Instance ID
         :return: A list of dictionary contains all info about all vulnerable packages for a host
         """
-        logger.info(f"fetch_host_vulnerable_packages_by_instance_id() for {instance_id}")
+        logger.debug(f"fetch_host_vulnerable_packages_by_instance_id() for {instance_id}")
         host_info = self.fetch_host_vulnerability_by_instance_id(instance_id)
         if not host_info:
             logger.debug(f"Not found host with instance id = {instance_id}")
@@ -159,7 +159,7 @@ class HostVulnerabilitiesHelper:
         payload['ParamInfo']['EVAL_GUID'] = eval_guid
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="HostVuln_VulnDetailsByEvalGuid_ByPackage", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"All vulnerable packages for {instance_id}: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"All vulnerable packages for {instance_id}: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def get_vuln_cve_trend_by_instance_id(self, instance_id: str) -> list:
@@ -184,7 +184,7 @@ class HostVulnerabilitiesHelper:
         }
         query_card_response = query_card_api.exec_query_card(card_name="HostVuln_StatsSummaryCVETrend", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"CVE trend for {instance_id}: {query_card_response.json()}")
+        logger.debug(f"CVE trend for {instance_id}: {query_card_response.json()}")
         return query_card_response.json()['data']
 
     def get_vuln_host_summary_by_instance_id(self, instance_id: str) -> list:
@@ -209,12 +209,12 @@ class HostVulnerabilitiesHelper:
         }
         query_card_response = query_card_api.exec_query_card(card_name="HostVuln_HostsSummaryAll_MV_NamedSet", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"Host summary for {instance_id}: {query_card_response.json()}")
+        logger.debug(f"Host summary for {instance_id}: {query_card_response.json()}")
         return query_card_response.json()['data']
 
     def wait_until_instance_has_cve_trend(self, instance_id, wait_until: int):
         """Wait for agent host to be returned by vulnerability query card HostVuln_StatsSummaryCVETrend."""
-        logger.info(f'Wait until {instance_id} has cve trend')
+        logger.debug(f'Wait until {instance_id} has cve trend')
         agent_found = False
         first_try = True
         vuln_stats = []
@@ -224,17 +224,18 @@ class HostVulnerabilitiesHelper:
             first_try = False
             vuln_stats = self.get_vuln_cve_trend_by_instance_id(instance_id)
             if type(vuln_stats) is list and len(vuln_stats) == 1:
-                logger.info(f'Found agent host {instance_id} in {vuln_stats}')
+                logger.debug(f'Found agent host {instance_id} in {vuln_stats}')
                 agent_found = True
         if not agent_found:
             raise TimeoutError(
                 f'Agent host {instance_id} was not returned by Vulnerability dashboard APIs.'
+                f'Current time {datetime.now()}'
                 f'Last API response: {vuln_stats}.'
             )
 
     def wait_until_instance_has_vuln_host_summary(self, instance_id, wait_until: int):
         """Wait for agent host to be returned by vulnerability query card 'HostVuln_HostsSummaryAll_MV_NamedSet'."""
-        logger.info(f'Wait until {instance_id} has vulnerability host summary')
+        logger.debug(f'Wait until {instance_id} has vulnerability host summary')
         agent_found = False
         first_try = True
         vuln_stats = []
@@ -244,11 +245,12 @@ class HostVulnerabilitiesHelper:
             first_try = False
             vuln_stats = self.get_vuln_host_summary_by_instance_id(instance_id)
             if type(vuln_stats) is list and len(vuln_stats) == 1:
-                logger.info(f'Found agent host {instance_id} in {vuln_stats}')
+                logger.debug(f'Found agent host {instance_id} in {vuln_stats}')
                 agent_found = True
         if not agent_found:
             raise TimeoutError(
                 f'Agent host {instance_id} was not returned by Vulnerability dashboard APIs.'
+                f'Current time {datetime.now()}'
                 f'Last API response: {vuln_stats}.'
             )
 
@@ -269,24 +271,26 @@ class HostVulnerabilitiesHelper:
                 vuln_data_returned = True
                 total_vuln = int(vuln_stats[0]['NUM_VULNERABILITIES'])
                 if total_vuln > 0:
-                    logger.info(f'Found {total_vuln} vulnerabilities for agent host {instance_id}')
+                    logger.debug(f'Found {total_vuln} vulnerabilities for agent host {instance_id}')
                     vuln_found = True
                     time_passed = int(time.monotonic() - start_time)
-                    logger.info(f"Host {instance_id} was found vulnerable after {time_passed} secs")
+                    logger.debug(f"Host {instance_id} was found vulnerable after {time_passed} secs, current time is {datetime.now()}")
         if not vuln_data_returned:
             raise TimeoutError(
                 f'Agent host {instance_id} has no vulnerability summary returned.'
+                f'Current time {datetime.now()}'
                 f'Last API response: {vuln_stats}.'
             )
         elif not vuln_found:
             raise TimeoutError(
                 f'Agent host {instance_id} has 0 vulnerabilities.'
+                f'Current time {datetime.now()}'
                 f'Last API response: {vuln_stats}.'
             )
 
     def wait_until_instance_change_to_agent_and_agentless_coverage_type(self, instance_id: str, wait_until: int):
         """Wait for agent host changes to agent and agentless scanning type"""
-        logger.info(f'Wait until {instance_id} changes to agent and agentless scanning type')
+        logger.debug(f'Wait until {instance_id} changes to agent and agentless scanning type')
         coverage_type_changed = False
         first_try = True
         start_time = time.monotonic()
@@ -299,17 +303,18 @@ class HostVulnerabilitiesHelper:
             if coverage_type == "Agent and Agentless":
                 coverage_type_changed = True
                 time_passed = int(time.monotonic() - start_time)
-                logger.info(f"Host {instance_id} was covered by both Agent and Agentless after {time_passed} secs")
+                logger.debug(f"Host {instance_id} was covered by both Agent and Agentless after {time_passed} secs, current time is {datetime.now()}")
                 break
         if not coverage_type_changed:
             raise TimeoutError(
                 f'Agent host {instance_id} was not changed to Agent and Agentless scanned'
+                f'Current time {datetime.now()}'
                 f'Last API response: {host_info}.'
             )
 
     def wait_until_package_appears_for_host(self, package_name: str, instance_id: str, wait_until: int):
         """Wait for agent host has a specific package scanned"""
-        logger.info(f'Wait until {package_name} scanned for {instance_id}')
+        logger.debug(f'Wait until {package_name} scanned for {instance_id}')
         found_package = False
         first_try = True
         start_time = time.monotonic()
@@ -322,17 +327,18 @@ class HostVulnerabilitiesHelper:
                 if package['PACKAGE_NAME'] == package_name:
                     found_package = True
                     time_passed = int(time.monotonic() - start_time)
-                    logger.info(f"Host {instance_id} was found {package_name} after {time_passed} secs")
+                    logger.debug(f"Host {instance_id} was found {package_name} after {time_passed} secs")
                     break
         if not found_package:
             raise TimeoutError(
                 f'{package_name} did not appear for agent host {instance_id}'
+                f'Current time {datetime.now()}'
                 f'Last API response: {packages}.'
             )
 
     def wait_until_package_active_for_host(self, package_name: str, instance_id: str, wait_until: int):
         """Wait for agent host has a specific package scanned and with status Active"""
-        logger.info(f'Wait until {package_name} active for {instance_id}')
+        logger.debug(f'Wait until {package_name} active for {instance_id}')
         package_active = False
         first_try = True
         while first_try or (time.monotonic() < wait_until and not package_active):
@@ -347,5 +353,6 @@ class HostVulnerabilitiesHelper:
         if not package_active:
             raise TimeoutError(
                 f'{package_name} did not change to Active for agent host {instance_id}'
+                f'Current time {datetime.now()}'
                 f'Last API response: {packages}.'
             )

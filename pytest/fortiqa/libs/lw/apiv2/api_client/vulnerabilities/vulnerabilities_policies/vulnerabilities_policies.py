@@ -28,7 +28,7 @@ class VulnerabilityPolicy:
         :return: Response
         """
         log.info("create_vulnerability_policy()")
-        log.info(f"Create payload: {json.dumps(payload, indent=2)}")
+        log.debug(f"Create payload: {json.dumps(payload, indent=2)}")
         response = self._user_api.post(url=f"{self._api_url}", payload=payload)
         return response
 

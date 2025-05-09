@@ -21,7 +21,7 @@ class AgentlessHelper:
                 "EnableEvalDetailsMView": True
             },
         }
-        logger.info(f"Agentless generic payload: {self.payload_template}")
+        logger.debug(f"Agentless generic payload: {self.payload_template}")
 
     def list_all_agentless_accounts(self) -> list:
         """Helper function to list all agentless cloud accounts"""
@@ -29,7 +29,7 @@ class AgentlessHelper:
         payload = deepcopy(self.payload_template)
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="Agentless_CLOUD_ACCOUNTS_INVENTORY", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"All agentless accounts: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"All agentless accounts: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def list_all_resources_scanned_agentless(self) -> list:
@@ -38,7 +38,7 @@ class AgentlessHelper:
         payload = deepcopy(self.payload_template)
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="Agentless_RESOURCE_INVENTORY", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"All resources scanned agentless: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"All resources scanned agentless: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def return_host_name_according_to_instance_id(self, instance_id: str) -> str:
@@ -90,7 +90,6 @@ class AgentlessHelper:
         """
         first_try = True
         host_found = False
-        start_time = time.monotonic()
         while first_try or (time.monotonic() < wait_until and not host_found):
             all_agentless_scanned_hosts = self.list_all_resources_scanned_agentless()
             if not first_try:
@@ -99,8 +98,7 @@ class AgentlessHelper:
             for host in all_agentless_scanned_hosts:
                 if host['RESOURCE_ID'] == instance_id:
                     host_found = True
-                    time_passed = int(time.monotonic() - start_time)
-                    logger.info(f"Host {instance_id} appears after {time_passed} secs")
+                    logger.info(f"Host {instance_id} appears")
                     break
         if not host_found:
             raise TimeoutError(
@@ -120,7 +118,6 @@ class AgentlessHelper:
         """
         host_scanned = False
         first_try = True
-        start_time = time.monotonic()
         while first_try or (time.monotonic() < wait_until and not host_scanned):
             if not first_try:
                 time.sleep(240)
@@ -129,10 +126,8 @@ class AgentlessHelper:
             for host in all_agentless_scanned_hosts:
                 if host['RESOURCE_ID'] == instance_id and host['LAST_SCAN_STATUS'] == 'Scanned':
                     host_scanned = True
-                    time_passed = int(time.monotonic() - start_time)
-                    logger.info(f"Host {instance_id} scanned after {time_passed} secs")
+                    logger.debug(f"Host {instance_id} was scanned")
                     break
-            time.sleep(30)
         if not host_scanned:
             raise TimeoutError(
                 f'Host {instance_id} was not scanned'
@@ -162,7 +157,7 @@ class AgentlessHelper:
                 if any(tag == image_tag for tag in image_tags):
                     image_found = True
                     time_passed = int(time.monotonic() - start_time)
-                    logger.info(f"Container Image with tag {image_tag} appears after {time_passed} secs")
+                    logger.debug(f"Container Image with tag {image_tag} appears after {time_passed} secs")
                     break
         if not image_found:
             raise TimeoutError(
@@ -194,7 +189,7 @@ class AgentlessHelper:
                     if tag == image_tag and resource['LAST_SCAN_STATUS'] == "Scanned":
                         image_scanned = True
                         time_passed = int(time.monotonic() - start_time)
-                        logger.info(f"Container Image with tag {image_tag} is scanned after {time_passed} secs")
+                        logger.debug(f"Container Image with tag {image_tag} is scanned after {time_passed} secs")
                         break
                 if image_scanned:
                     break

@@ -19,9 +19,6 @@ debug = logging.getLogger(__name__).debug
 # Buttons #
 button = '//button/span[text()="visible_text"]'
 download_btn = '//button[contains(@data-testid,"download")]'
-refresh_btn = '//button[contains(@data-testid,"refresh")]'
-page_size_btn = '//button[contains(@data-testid,"page-size")]'
-page_size_value = '//div[contains(@data-testid,"page-size")]//span[text()="size_value"]'
 
 # Main Left Menu
 left_menu_item = '(//div[@class="side-nav-link-text"]/div[text()="visible_text"])[last()]'
@@ -120,13 +117,6 @@ class WebElementsHelper:
         :param base_xpath: base xpath
         """
         self.click(base_xpath + download_btn)
-
-    def click_refresh_btn(self, base_xpath=''):
-        """
-        Click a refresh button
-        :param base_xpath: base xpath
-        """
-        self.click(base_xpath + refresh_btn)
 
     def click_by_text(self, text: str, base_xpath="", position="1", partial: bool = False):
         """

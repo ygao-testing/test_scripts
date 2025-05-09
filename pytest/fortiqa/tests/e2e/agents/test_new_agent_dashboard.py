@@ -10,7 +10,7 @@ from fortiqa.libs.lw.apiv1.api_client.new_agent_dashboard.new_agent_dashboard im
 logger = logging.getLogger(__name__)
 
 
-def test_host_is_added_to_new_agent_dashboard(api_v1_client, os_version, csp, agent_host, agent_host_tf_output):
+def test_host_is_added_to_new_agent_dashboard(api_v1_client, os_version, csp, agent_host, agent_host_tf_output, wait_until_agent_is_added_to_the_new_agent_dashboard):
     """Test the host is added to the new agent dashboard
 
     Given: all hosts are deployed
@@ -23,15 +23,10 @@ def test_host_is_added_to_new_agent_dashboard(api_v1_client, os_version, csp, ag
       agent_host: tf module deployed for the given os_version and csp.
     """
     logger.info(f'test_host_is_added_to_new_agent_dashboard({os_version=})')
-    timeout = 9600
-    deployment_time = agent_host['deployment_time']
-    deployment_timestamp = agent_host['deployment_timestamp']
-    agent_host_instance_id = agent_host_tf_output['agent_host_instance_id']
-    agents_helper = AgentsHelper(api_v1_client, deployment_timestamp)
-    agents_helper.wait_until_agent_is_added_to_new_dashboard(agent_host_instance_id, wait_until=deployment_time+timeout)
+    assert wait_until_agent_is_added_to_the_new_agent_dashboard, f"{csp}:{os_version} is not added in the New Agent Dashboard"
 
 
-def test_host_is_active_in_new_agent_dashboard(api_v1_client, os_version, csp, agent_host, agent_host_tf_output):
+def test_host_is_active_in_new_agent_dashboard(api_v1_client, os_version, csp, agent_host, agent_host_tf_output, wait_until_host_is_active_in_the_new_agent_dashboard):
     """Test host is active inside the new Agent dashboard.
 
     Given: all agents are deployed
@@ -45,11 +40,7 @@ def test_host_is_active_in_new_agent_dashboard(api_v1_client, os_version, csp, a
       agent_host: tf module deployed for the given os_version and csp.
     """
     logger.info(f'test_host_is_active({os_version=})')
-    timeout = 9600
-    deployment_time = agent_host['deployment_time']
-    deployment_timestamp = agent_host['deployment_timestamp']
-    agent_host_instance_id = agent_host_tf_output['agent_host_instance_id']
-    AgentsHelper(api_v1_client, deployment_timestamp).wait_until_agent_is_active_in_new_agent_dashboard(agent_host_instance_id, wait_until=deployment_time+timeout)
+    assert wait_until_host_is_active_in_the_new_agent_dashboard, f"{csp}:{os_version} is not active in the New Agent Dashboard"
 
 
 def compare_tf_output_to_response(tf_output: dict, host_details: dict) -> list:
@@ -124,7 +115,7 @@ def compare_tf_output_to_response(tf_output: dict, host_details: dict) -> list:
         pytest.param('azure', marks=pytest.mark.xfail(reason='https://lacework.atlassian.net/browse/LXAGNT-204')),
         'gcp',
     ], indirect=True)
-def test_new_agent_dashboard_details_by_hostname_and_ip(api_v1_client, os_version, csp, agent_host, terraform_owner, linux_agent_token, windows_agent_token, agent_host_tf_output):
+def test_new_agent_dashboard_details_by_hostname_and_ip(api_v1_client, os_version, csp, agent_host, terraform_owner, linux_agent_token, windows_agent_token, agent_host_tf_output, wait_until_host_is_active_in_the_new_agent_dashboard):
     """Test the new Agent Dashboard V1 API filtered by hostname and IP returns correct details of the hosts
 
     Given: all agents are deployed
@@ -167,7 +158,7 @@ def test_new_agent_dashboard_details_by_hostname_and_ip(api_v1_client, os_versio
     assert not error_messages, error_messages
 
 
-def test_new_agent_dashboard_details_by_instance_id(api_v1_client, os_version, csp, agent_host, terraform_owner, linux_agent_token, windows_agent_token, agent_host_tf_output):
+def test_new_agent_dashboard_details_by_instance_id(api_v1_client, os_version, csp, agent_host, terraform_owner, linux_agent_token, windows_agent_token, agent_host_tf_output, wait_until_host_is_active_in_the_new_agent_dashboard):
     """Test the new Agent Dashboard V1 API filtered by instance_id returns correct details of the hosts
 
     Given: all agents are deployed

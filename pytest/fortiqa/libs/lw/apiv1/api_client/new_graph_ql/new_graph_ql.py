@@ -19,7 +19,7 @@ class NewGraphQL:
         :param payload: Query payload
         :return: Response
         """
-        logger.info("exec_query()")
-        logger.info(f"Payload: {json.dumps(payload, indent=2)}")
+        logger.debug("exec_query()")
+        logger.debug(f"Payload: {json.dumps(payload, indent=2)}")
         response = self._user_api.post(url=self._api_url, payload=payload)
         return response

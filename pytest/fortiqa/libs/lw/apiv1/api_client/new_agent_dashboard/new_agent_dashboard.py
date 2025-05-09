@@ -21,6 +21,6 @@ class NewAgentDashboard:
         :return: Response
         """
         log.info("get_agent_inventory()")
-        log.info(f"Payload: {json.dumps(payload, indent=2)}")
+        log.debug(f"Payload: {json.dumps(payload, indent=2)}")
         response = self._user_api.post(url=self._api_url, payload=payload)
         return response

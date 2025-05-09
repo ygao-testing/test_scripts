@@ -17,7 +17,6 @@ class IdentityV1:
             "identity_summary": f"{self._base_url}/CIEM_IdentityDetails_RecalculatingIdentitySummaryByIdentityUrn",
             "identity_entitlements_for_resource_type": f"{self._base_url}/CIEM_IdentityDetails_EntitlementsForResourceTypeByIdentity",
             "identity_entitlements_summary": f"{self._base_url}/CIEM_IdentityDetails_EntitlementsSummaryByIdentityUrn"
-
         }
 
     def query_identities(self, start_time_range: int, end_time_range: int, filters: dict | None = None) -> requests.Response:
@@ -196,9 +195,9 @@ class IdentityV1:
         if account_id:
             filters["CIEM_Identities_Filter.DOMAIN_ID"] = [
                 {"value": account_id, "filterGroup": "include"}]
-        timeout_time = time.time() + timeout_seconds
+        timeout_time = time.monotonic() + timeout_seconds
         update_completed = False
-        while time.time() < timeout_time and not update_completed:
+        while time.monotonic() < timeout_time and not update_completed:
             response = self.query_identities(
                 start_time_range, end_time_range, filters)
             if response.status_code == 200:
@@ -274,10 +273,10 @@ class IdentityV1:
             "CIEM_Identities_Filter.DOMAIN_ID": [{"value": account_id, "filterGroup": "include"}]
         }
 
-        timeout_time = time.time() + timeout_seconds
+        timeout_time = time.monotonic() + timeout_seconds
         update_completed = False
 
-        while time.time() < timeout_time and not update_completed:
+        while time.monotonic() < timeout_time and not update_completed:
             response = self.query_identities(
                 start_time_range, end_time_range, filters)
 
@@ -317,4 +316,55 @@ class IdentityV1:
             end_time_range = datetime_to_timestamp(datetime.now(timezone.utc))
 
         logger.info(f"Identity properties update status: {update_completed}")
+        return update_completed
+
+    def check_for_gcp_user_and_group_identity_properties_update(
+        self,
+        start_time_range: int,
+        org_name: str,
+        timeout_seconds: int = 60
+    ) -> bool:
+        """
+        Wait for user and group identity properties update to complete within the specified timeout.
+
+        Continuously queries the API for user and group identity updates within the given time range.
+        If any record contains non-null "PROPERTIES", the update is considered finished.
+
+        Args:
+            start_time_range (int): Start timestamp in milliseconds.
+            org_name (str): Organization name used for filtering (user and group exist in organization level).
+            timeout_seconds (int, optional): Maximum time (in seconds) to wait for the update (default: 60).
+
+        Returns:
+            bool: True if at least one identity (user/group) has non-null "PROPERTIES" within the timeout, False otherwise.
+        """
+        filters = {
+            "CIEM_Identities_Filter.IDENTITY_TYPE": [{"value": "GCP_GOOGLE_ACCOUNT", "filterGroup": "include"}, {"value": "GCP_GOOGLE_GROUP", "filterGroup": "include"}],
+            "CIEM_Identities_Filter.DOMAIN_ID": [{"value": org_name, "filterGroup": "include"}],
+        }
+        timeout_time = time.monotonic() + timeout_seconds
+        update_completed = False
+        while time.monotonic() < timeout_time and not update_completed:
+            end_time_range = datetime_to_timestamp(datetime.now(timezone.utc))
+            response = self.query_identities(
+                start_time_range, end_time_range, filters)
+            if response.status_code == 200:
+                response_json = response.json()
+                logger.debug(f"Response JSON: {response_json}")
+                records = response_json.get('data', [])
+                for record in records:
+                    if record.get("PROPERTIES", None):
+                        update_completed = True
+                        logger.info(f"User/Group identity properties update completed. Found record with non-null PROPERTIES:\n{record}")
+                        break
+                if not update_completed:
+                    logger.info("Status code 200 received, but no user/group identity found with non-null PROPERTIES. Sleeping for 600 seconds before retrying.")
+                    time.sleep(600)
+            elif response.status_code == 204:
+                logger.info("Status code 204 received. Sleeping for 600 seconds before retrying.")
+                time.sleep(600)
+            else:
+                logger.error(f"Unexpected status code: {response.status_code} received. Sleeping for 2 seconds before retrying.")
+                time.sleep(2)
+        logger.info(f"User/Group identity properties update status: {update_completed}")
         return update_completed

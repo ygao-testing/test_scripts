@@ -77,7 +77,7 @@ class AgentsHelper:
         }
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="Card70", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"All agents: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"All agents: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def list_ip_with_no_agent(self) -> list:
@@ -86,7 +86,7 @@ class AgentsHelper:
         payload = deepcopy(self.payload_template)
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="Card147", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"All IPs with no agent: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"All IPs with no agent: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def list_all_azure_instance_with_no_agent(self) -> list:
@@ -95,7 +95,7 @@ class AgentsHelper:
         payload = deepcopy(self.payload_template)
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="InstancesWithNoAgents_Azure", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"All Azure instances with no agent: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"All Azure instances with no agent: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def list_all_gcp_instance_with_no_agent(self) -> list:
@@ -104,7 +104,7 @@ class AgentsHelper:
         payload = deepcopy(self.payload_template)
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="InstancesWithNoAgents_GCP", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"All GCP instances with no agent: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"All GCP instances with no agent: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def list_all_instances_with_no_agent(self) -> list:
@@ -113,7 +113,7 @@ class AgentsHelper:
         payload = deepcopy(self.payload_template)
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="InstancesWithNoAgents", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"All instances with no agent: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"All instances with no agent: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def list_all_instances_with_no_agent_or_agentless(self) -> list:
@@ -122,7 +122,7 @@ class AgentsHelper:
         payload = deepcopy(self.payload_template)
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="InstancesWithNoAgentsOrAgentless", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"All instances with no agent or agentless scanning: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"All instances with no agent or agentless scanning: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def fetch_agent_info_by_hostname(self, hostname: str) -> dict | None:
@@ -137,7 +137,7 @@ class AgentsHelper:
         for agent_info in all_agent_info:
             if agent_info.get('MACHINE_HOSTNAME', "") == hostname:
                 return agent_info
-        logger.info(f"Not found agent info for {hostname=}")
+        logger.debug(f"Not found agent info for {hostname=}")
         return None
 
     def fetch_agent_info_by_instance_id(self, instance_id: str) -> dict | None:
@@ -152,7 +152,7 @@ class AgentsHelper:
         for agent_info in all_agent_info:
             if agent_info.get('TAGS', {}).get('InstanceId') == instance_id:
                 return agent_info
-        logger.info(f"Not found agent info for {instance_id=}")
+        logger.debug(f"Not found agent info for {instance_id=}")
         return None
 
     def fetch_agent_info_by_os(self, os: str) -> list:
@@ -168,7 +168,7 @@ class AgentsHelper:
         for agent_info in all_agent_info:
             if 'AGENT_OS' in agent_info and agent_info['AGENT_OS'].lower() == os.lower():
                 result.append(agent_info)
-        logger.info(f"Agents with {os=}: {result}")
+        logger.debug(f"Agents with {os=}: {result}")
         return result
 
     def fetch_agent_info_by_account(self, account: str) -> list:
@@ -184,7 +184,7 @@ class AgentsHelper:
         for agent_info in all_agent_info:
             if agent_info.get('TAGS', {}).get('Account') == account:
                 result.append(agent_info)
-        logger.info(f"Agents in {account=}: {result}")
+        logger.debug(f"Agents in {account=}: {result}")
         return result
 
     def fetch_agent_external_in_Bytes(self, filter_type: str, instance_id: str = "", hostname: str = "") -> dict:
@@ -204,7 +204,7 @@ class AgentsHelper:
         payload.update(filter)  # type: ignore[arg-type]
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="Card158_DataCenterProcess_ExternalInKBytes", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"ExternalInKBytes: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"ExternalInKBytes: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def fetch_agent_external_server_connections(self, filter_type: str, instance_id: str = "", hostname: str = "") -> dict:
@@ -224,7 +224,7 @@ class AgentsHelper:
         payload.update(filter)  # type: ignore[arg-type]
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="Card158_DataCenterProcess_ExternalServerConnections", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"ExternalServerConnections: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"ExternalServerConnections: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def fetch_agent_external_client_connections(self, filter_type: str, instance_id: str = "", hostname: str = "") -> dict:
@@ -244,7 +244,7 @@ class AgentsHelper:
         payload.update(filter)  # type: ignore[arg-type]
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="Card158_DataCenterProcess_ExternalClientConnections", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"ExternalClientConnections: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"ExternalClientConnections: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def fetch_agent_alerts(self, filter_type: str, instance_id: str = "", hostname: str = "") -> dict:
@@ -266,7 +266,7 @@ class AgentsHelper:
         payload.update(filter)  # type: ignore[arg-type]
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="Card113_AlertInbox", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"Alerts: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"Alerts: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def fetch_agent_external_out_bytes(self, filter_type: str, instance_id: str = "", hostname: str = "") -> dict:
@@ -286,7 +286,7 @@ class AgentsHelper:
         payload.update(filter)  # type: ignore[arg-type]
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="Card158_DataCenterProcess_ExternalOutKBytes", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"ExternalOutBytes: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"ExternalOutBytes: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def fetch_agent_unique_user(self, filter_type: str, instance_id: str = "", hostname: str = "") -> dict:
@@ -306,7 +306,7 @@ class AgentsHelper:
         payload.update(filter)  # type: ignore[arg-type]
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="Card179_User", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"Unique Users: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"Unique Users: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def fetch_agent_unique_machine(self, filter_type: str, instance_id: str = "", hostname: str = "") -> dict:
@@ -326,7 +326,7 @@ class AgentsHelper:
         payload.update(filter)  # type: ignore[arg-type]
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="Card179_Machine", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"Unique Machines: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"Unique Machines: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def fetch_agent_total_connections(self, filter_type: str, instance_id: str = "", hostname: str = "") -> dict:
@@ -346,7 +346,7 @@ class AgentsHelper:
         payload.update(filter)  # type: ignore[arg-type]
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="Card158_DataCenterProcess_TotalConnections", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"Total connections: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"Total connections: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def fetch_agent_total_bytes(self, filter_type: str, instance_id: str = "", hostname: str = "") -> dict:
@@ -366,7 +366,7 @@ class AgentsHelper:
         payload.update(filter)  # type: ignore[arg-type]
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="Card158_DataCenterProcess_TotalKBytes", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"Total bytes: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"Total bytes: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def fetch_agent_external_server_connection_details_udp(self, filter_type: str, instance_id: str = "", hostname: str = "") -> dict:
@@ -386,7 +386,7 @@ class AgentsHelper:
         payload.update(filter)  # type: ignore[arg-type]
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="Card80_UDP", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"UDP connections details: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"UDP connections details: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def fetch_agent_external_server_connection_details_tcp(self, filter_type: str, instance_id: str = "", hostname: str = "") -> dict:
@@ -406,7 +406,7 @@ class AgentsHelper:
         payload.update(filter)  # type: ignore[arg-type]
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="Card80_TCP", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"TCP connections details: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"TCP connections details: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def fetch_agent_dropped_packets_summary(self, filter_type: str, instance_id: str = "", hostname: str = "") -> dict:
@@ -426,7 +426,7 @@ class AgentsHelper:
         payload.update(filter)  # type: ignore[arg-type]
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="Card156", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"Dropped packet summary: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"Dropped packet summary: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def fetch_agent_list_of_active_executables(self, filter_type: str, instance_id: str = "", hostname: str = "") -> dict:
@@ -446,7 +446,7 @@ class AgentsHelper:
         payload.update(filter)  # type: ignore[arg-type]
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="Card187", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"Active executables: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"Active executables: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def fetch_agent_executable_info(self, filter_type: str, instance_id: str = "", hostname: str = "") -> dict:
@@ -466,7 +466,7 @@ class AgentsHelper:
         payload.update(filter)  # type: ignore[arg-type]
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="Card189", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"Executables info: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"Executables info: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def fetch_agent_active_containers(self, filter_type: str, instance_id: str = "", hostname: str = "") -> dict:
@@ -486,7 +486,7 @@ class AgentsHelper:
         payload.update(filter)  # type: ignore[arg-type]
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="Card197", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"Active containers: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"Active containers: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def fetch_agent_container_info(self, filter_type: str, instance_id: str = "", hostname: str = "") -> dict:
@@ -506,7 +506,7 @@ class AgentsHelper:
         payload.update(filter)  # type: ignore[arg-type]
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="Card199", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"Containers info: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"Containers info: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def fetch_agent_machine_properties(self, filter_type: str, instance_id: str = "", hostname: str = "") -> dict:
@@ -526,7 +526,7 @@ class AgentsHelper:
         payload.update(filter)  # type: ignore[arg-type]
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="Card34", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"Machine properties: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"Machine properties: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def fetch_agent_machine_tag_summary(self, filter_type: str, instance_id: str = "", hostname: str = "") -> dict:
@@ -546,7 +546,7 @@ class AgentsHelper:
         payload.update(filter)  # type: ignore[arg-type]
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="Card190", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"Machine tag summary: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"Machine tag summary: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def fetch_agent_exposed_ports(self, filter_type: str, instance_id: str = "", hostname: str = "") -> dict:
@@ -566,7 +566,7 @@ class AgentsHelper:
         payload.update(filter)  # type: ignore[arg-type]
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="Card30", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"Exposed ports: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"Exposed ports: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def fetch_agent_user_login_activity(self, filter_type: str, instance_id: str = "", hostname: str = "") -> dict:
@@ -586,7 +586,7 @@ class AgentsHelper:
         payload.update(filter)  # type: ignore[arg-type]
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="Card25", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"User login activity: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"User login activity: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def fetch_agent_user_authentication_summary(self, filter_type: str, instance_id: str = "", hostname: str = "") -> dict:
@@ -606,7 +606,7 @@ class AgentsHelper:
         payload.update(filter)  # type: ignore[arg-type]
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="Card36", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"User authentication summary: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"User authentication summary: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def fetch_agent_bad_login_summary(self, filter_type: str, instance_id: str = "", hostname: str = "") -> dict:
@@ -626,7 +626,7 @@ class AgentsHelper:
         payload.update(filter)  # type: ignore[arg-type]
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="Card162", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"Bad login summary: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"Bad login summary: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def fetch_agent_external_client_connection_detail_tcp(self, filter_type: str, instance_id: str = "", hostname: str = "") -> dict:
@@ -646,7 +646,7 @@ class AgentsHelper:
         payload.update(filter)  # type: ignore[arg-type]
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="Card32_TCP", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"External TCP Client connection details: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"External TCP Client connection details: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def fetch_agent_external_client_connection_detail_udp(self, filter_type: str, instance_id: str = "", hostname: str = "") -> dict:
@@ -666,7 +666,7 @@ class AgentsHelper:
         payload.update(filter)  # type: ignore[arg-type]
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="Card32_UDP", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"External UDP Client connection details: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"External UDP Client connection details: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def fetch_agent_internal_client_connection_detail_tcp(self, filter_type: str, instance_id: str = "", hostname: str = "") -> dict:
@@ -686,7 +686,7 @@ class AgentsHelper:
         payload.update(filter)  # type: ignore[arg-type]
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="Card33_TCP", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"Internal TCP Client connection details: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"Internal TCP Client connection details: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def fetch_agent_internal_client_connection_detail_udp(self, filter_type: str, instance_id: str = "", hostname: str = "") -> dict:
@@ -706,7 +706,7 @@ class AgentsHelper:
         payload.update(filter)  # type: ignore[arg-type]
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="Card33_UDP", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"Internal UDP Client connection details: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"Internal UDP Client connection details: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def fetch_agent_hostname_to_instance_id(self, filter_type: str, instance_id: str = "", hostname: str = "") -> dict:
@@ -726,7 +726,7 @@ class AgentsHelper:
         payload.update(filter)  # type: ignore[arg-type]
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="Card34_HostnameToInstanceId", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"Instance ID mapping details: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"Instance ID mapping details: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def fetch_agent_interfaces(self, filter_type: str, instance_id: str = "", hostname: str = "") -> dict:
@@ -746,7 +746,7 @@ class AgentsHelper:
         payload.update(filter)  # type: ignore[arg-type]
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="Card161", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"Interfaces on a machine: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"Interfaces on a machine: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def fetch_agent_domain_lookups(self, filter_type: str, instance_id: str = "", hostname: str = "") -> dict:
@@ -766,7 +766,7 @@ class AgentsHelper:
         payload.update(filter)  # type: ignore[arg-type]
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="Card63", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"Domain lookups info: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"Domain lookups info: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def fetch_agent_unique_process_details(self, filter_type: str, instance_id: str = "", hostname: str = "") -> dict:
@@ -786,7 +786,7 @@ class AgentsHelper:
         payload.update(filter)  # type: ignore[arg-type]
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="Card40", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"Unique process details info: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"Unique process details info: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def fetch_agent_tcp_internal_connection_from_internal_devices_without_agents(self, filter_type: str, instance_id: str = "", hostname: str = "") -> dict:
@@ -806,7 +806,7 @@ class AgentsHelper:
         payload.update(filter)  # type: ignore[arg-type]
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="Card33_FromInternalDevice_TCP", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"TCP internal connection from internal devices without agents info: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"TCP internal connection from internal devices without agents info: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def fetch_agent_udp_internal_connection_from_internal_devices_without_agents(self, filter_type: str, instance_id: str = "", hostname: str = "") -> dict:
@@ -826,7 +826,7 @@ class AgentsHelper:
         payload.update(filter)  # type: ignore[arg-type]
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="Card33_FromInternalDevice_UDP", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"UDP internal connection from internal devices without agents info: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"UDP internal connection from internal devices without agents info: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def fetch_agent_tcp_internal_connection_to_internal_devices_without_agents(self, filter_type: str, instance_id: str = "", hostname: str = "") -> dict:
@@ -846,7 +846,7 @@ class AgentsHelper:
         payload.update(filter)  # type: ignore[arg-type]
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="Card33_ToInternalDevice_TCP", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"TCP internal connection to internal devices without agents info: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"TCP internal connection to internal devices without agents info: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def fetch_agent_udp_internal_connection_to_internal_devices_without_agents(self, filter_type: str, instance_id: str = "", hostname: str = "") -> dict:
@@ -866,7 +866,7 @@ class AgentsHelper:
         payload.update(filter)  # type: ignore[arg-type]
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="Card33_ToInternalDevice_UDP", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"UDP internal connection to internal devices without agents info: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"UDP internal connection to internal devices without agents info: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def fetch_agent_list_of_detected_secrets(self, filter_type: str, instance_id: str = "", hostname: str = "") -> dict:
@@ -886,7 +886,7 @@ class AgentsHelper:
         payload.update(filter)  # type: ignore[arg-type]
         query_card_response = QueryCard(self.user_api).exec_query_card(card_name="AgentlessDataSecretsHostSummary", payload=payload)
         assert query_card_response.status_code == 200, f"Failed to execute the card, error: {query_card_response.text}"
-        logger.info(f"List of detected secrets info: {json.dumps(query_card_response.json(), indent=2)}")
+        logger.debug(f"List of detected secrets info: {json.dumps(query_card_response.json(), indent=2)}")
         return query_card_response.json()['data']
 
     def wait_until_agent_is_added(self, instance_id, wait_until: int):
@@ -912,7 +912,7 @@ class AgentsHelper:
                 if agent.get('TAGS', {}).get('InstanceId') == instance_id:
                     agent_found = True
                     time_passed = int(time.monotonic() - start_time)
-                    logger.info(f"Host {instance_id} is added to Agent dashboard after {time_passed} secs")
+                    logger.debug(f"Host {instance_id} is added to Agent dashboard after {time_passed} secs")
                     break
         if not agent_found:
             raise TimeoutError(
@@ -949,13 +949,13 @@ class AgentsHelper:
                 f'Last status: {agent_status}'
             )
         time_passed = int(time.monotonic() - start_time)
-        logger.info(f"Host {instance_id} is active in the Agent dashboard after {time_passed} secs")
+        logger.debug(f"Host {instance_id} is active in the Agent dashboard after {time_passed} secs")
 
-    def wait_until_agent_dashboard_has_unique_machines(self, instance_id, wait_until: int):
+    def wait_until_agent_dashboard_has_unique_machines(self, hostname, wait_until: int):
         """Waits for agent's unique machine to become available for up to 120 minutes.
 
         Args:
-            instance_id: AWS isntance ID
+            hostname: Hostname
             wait_until: Unix time until we wait for agent's unique machine to become available.
 
         Returns: None
@@ -967,21 +967,21 @@ class AgentsHelper:
             if not first_try:
                 time.sleep(240)
             first_try = False
-            agent_unique_machine_data = self.fetch_agent_unique_machine(filter_type="INSTANCE_ID", instance_id=instance_id)
+            agent_unique_machine_data = self.fetch_agent_unique_machine(filter_type="HOSTNAME", hostname=hostname)
             for data in agent_unique_machine_data:
                 if data['COUNT']:
                     unique_machines = data['COUNT']
         if unique_machines is None:
             raise TimeoutError(
-                f'Agent {instance_id} unique machines board is not ready.'
+                f'Agent {hostname} unique machines board is not ready.'
                 f'Last data: {unique_machines}'
             )
 
-    def wait_until_agent_dashboard_has_unique_users(self, instance_id, wait_until: int):
+    def wait_until_agent_dashboard_has_unique_users(self, hostname, wait_until: int):
         """Waits for agent's unique users to become available for up to 120 minutes.
 
         Args:
-            instance_id: AWS isntance ID
+            hostname: Hostname
             wait_until: Unix time until we wait for agent's unique users to become available.
 
         Returns: None
@@ -993,21 +993,21 @@ class AgentsHelper:
             if not first_try:
                 time.sleep(240)
             first_try = False
-            data_returned = self.fetch_agent_unique_user(filter_type="INSTANCE_ID", instance_id=instance_id)
+            data_returned = self.fetch_agent_unique_user(filter_type="HOSTNAME", hostname=hostname)
             for data in data_returned:
                 if data['COUNT']:
                     unique_users = data['COUNT']
         if unique_users is None:
             raise TimeoutError(
-                f'Agent {instance_id} unique users board is not ready.'
+                f'Agent {hostname} unique users board is not ready.'
                 f'Last data: {unique_users}'
             )
 
-    def wait_until_agent_dashboard_has_total_bytes(self, instance_id, wait_until: int):
+    def wait_until_agent_dashboard_has_total_bytes(self, hostname, wait_until: int):
         """Waits for agent's total bytes board to become available for up to 120 minutes.
 
         Args:
-            instance_id: AWS isntance ID
+            hostname: Hostname
             wait_until: Unix time until we wait for agent's total bytes board to become available.
 
         Returns: None
@@ -1019,21 +1019,21 @@ class AgentsHelper:
             if not first_try:
                 time.sleep(240)
             first_try = False
-            data_returned = self.fetch_agent_total_bytes(filter_type="INSTANCE_ID", instance_id=instance_id)
+            data_returned = self.fetch_agent_unique_user(filter_type="HOSTNAME", hostname=hostname)
             for data in data_returned:
                 if data['COUNT']:
                     total_bytes = data['COUNT']
         if total_bytes is None:
             raise TimeoutError(
-                f'Agent {instance_id} unique total bytes board is not ready.'
+                f'Agent {hostname} unique total bytes board is not ready.'
                 f'Last data: {total_bytes}'
             )
 
-    def wait_until_agent_dashboard_has_total_connections(self, instance_id, wait_until: int):
+    def wait_until_agent_dashboard_has_total_connections(self, hostname, wait_until: int):
         """Waits for agent's total connections board to become available for up to 120 minutes.
 
         Args:
-            instance_id: AWS isntance ID
+            hostname: Hostname
             wait_until: Unix time until we wait for agent's total connections board to become available.
 
         Returns: None
@@ -1045,21 +1045,21 @@ class AgentsHelper:
             if not first_try:
                 time.sleep(240)
             first_try = False
-            data_returned = self.fetch_agent_total_connections(filter_type="INSTANCE_ID", instance_id=instance_id)
+            data_returned = self.fetch_agent_total_connections(filter_type="HOSTNAME", hostname=hostname)
             for data in data_returned:
                 if data['COUNT']:
                     total_connections = data['COUNT']
         if total_connections is None:
             raise TimeoutError(
-                f'Agent {instance_id} unique total connections board is not ready.'
+                f'Agent {hostname} unique total connections board is not ready.'
                 f'Last data: {total_connections}'
             )
 
-    def wait_until_agent_dashboard_has_external_out_bytes(self, instance_id, wait_until: int):
+    def wait_until_agent_dashboard_has_external_out_bytes(self, hostname, wait_until: int):
         """Waits for agent's external out bytes board to become available for up to 120 minutes.
 
         Args:
-            instance_id: AWS isntance ID
+            hostname: Hostname
             wait_until: Unix time until we wait for agent's external out bytes board to become available.
 
         Returns: None
@@ -1071,21 +1071,21 @@ class AgentsHelper:
             if not first_try:
                 time.sleep(240)
             first_try = False
-            data_returned = self.fetch_agent_external_out_bytes(filter_type="INSTANCE_ID", instance_id=instance_id)
+            data_returned = self.fetch_agent_external_out_bytes(filter_type="HOSTNAME", hostname=hostname)
             for data in data_returned:
                 if data['COUNT']:
                     external_out_bytes = data['COUNT']
         if external_out_bytes is None:
             raise TimeoutError(
-                f'Agent {instance_id} unique external out bytes board is not ready.'
+                f'Agent {hostname} unique external out bytes board is not ready.'
                 f'Last data: {external_out_bytes}'
             )
 
-    def wait_until_agent_dashboard_has_external_in_bytes(self, instance_id, wait_until: int):
+    def wait_until_agent_dashboard_has_external_in_bytes(self, hostname, wait_until: int):
         """Waits for agent's external in bytes board to become available for up to 120 minutes.
 
         Args:
-            instance_id: AWS isntance ID
+            hostname: Hostname
             wait_until: Unix time until we wait for agent's external in bytes board to become available.
 
         Returns: None
@@ -1097,21 +1097,21 @@ class AgentsHelper:
             if not first_try:
                 time.sleep(240)
             first_try = False
-            data_returned = self.fetch_agent_external_in_Bytes(filter_type="INSTANCE_ID", instance_id=instance_id)
+            data_returned = self.fetch_agent_external_in_Bytes(filter_type="HOSTNAME", hostname=hostname)
             for data in data_returned:
                 if data['COUNT']:
                     external_in_bytes = data['COUNT']
         if external_in_bytes is None:
             raise TimeoutError(
-                f'Agent {instance_id} external in bytes board is not ready.'
+                f'Agent {hostname} external in bytes board is not ready.'
                 f'Last data: {external_in_bytes}'
             )
 
-    def wait_until_agent_dashboard_has_external_in_connections(self, instance_id, wait_until: int):
+    def wait_until_agent_dashboard_has_external_in_connections(self, hostname, wait_until: int):
         """Waits for agent's external in connections board to become available for up to 120 minutes.
 
         Args:
-            instance_id: AWS isntance ID
+            hostname: Hostname
             wait_until: Unix time until we wait for agent's external in connections board to become available.
 
         Returns: None
@@ -1123,21 +1123,21 @@ class AgentsHelper:
             if not first_try:
                 time.sleep(240)
             first_try = False
-            data_returned = self.fetch_agent_external_client_connections(filter_type="INSTANCE_ID", instance_id=instance_id)
+            data_returned = self.fetch_agent_external_client_connections(filter_type="HOSTNAME", hostname=hostname)
             for data in data_returned:
                 if data['COUNT']:
                     external_in_connections = data['COUNT']
         if external_in_connections is None:
             raise TimeoutError(
-                f'Agent {instance_id} external in connections board is not ready.'
+                f'Agent {hostname} external in connections board is not ready.'
                 f'Last data: {external_in_connections}'
             )
 
-    def wait_until_agent_dashboard_has_external_out_connections(self, instance_id, wait_until: int):
+    def wait_until_agent_dashboard_has_external_out_connections(self, hostname, wait_until: int):
         """Waits for agent's external out connections board to become available for up to 120 minutes.
 
         Args:
-            instance_id: AWS isntance ID
+            hostname: Hostname
             wait_until: Unix time until we wait for agent's external out connections board to become available.
 
         Returns: None
@@ -1149,21 +1149,21 @@ class AgentsHelper:
             if not first_try:
                 time.sleep(240)
             first_try = False
-            data_returned = self.fetch_agent_external_server_connections(filter_type="INSTANCE_ID", instance_id=instance_id)
+            data_returned = self.fetch_agent_external_server_connections(filter_type="HOSTNAME", hostname=hostname)
             for data in data_returned:
                 if data['COUNT']:
                     external_out_connections = data['COUNT']
         if external_out_connections is None:
             raise TimeoutError(
-                f'Agent {instance_id} external out connections board is not ready.'
+                f'Agent {hostname} external out connections board is not ready.'
                 f'Last data: {external_out_connections}'
             )
 
-    def wait_until_agent_dashboard_has_instance_id_mapping(self, instance_id, wait_until: int):
+    def wait_until_agent_dashboard_has_instance_id_mapping(self, hostname, wait_until: int):
         """Waits for agent's external out connections board to become available for up to 120 minutes.
 
         Args:
-            instance_id: AWS isntance ID
+            hostname: Hostname
             wait_until: Unix time until we wait for agent's external out connections board to become available.
 
         Returns: None
@@ -1175,21 +1175,21 @@ class AgentsHelper:
             if not first_try:
                 time.sleep(240)
             first_try = False
-            data_returned = self.fetch_agent_hostname_to_instance_id(filter_type="INSTANCE_ID", instance_id=instance_id)
+            data_returned = self.fetch_agent_hostname_to_instance_id(filter_type="HOSTNAME", hostname=hostname)
             for data in data_returned:
-                assert data['INSTANCE_ID'] == instance_id, f"Expected to find instance id: {instance_id}, but found {data}"
+                assert data['HOSTNAME'] == hostname, f"Expected to find HOSTNAME: {hostname}, but found {data}"
                 instance_id_mapping = True
         if not instance_id_mapping:
             raise TimeoutError(
-                f'Agent {instance_id} external out connections board is not ready.'
+                f'Agent {hostname} external out connections board is not ready.'
                 f'Last data: {data}'
             )
 
-    def wait_until_agent_dashboard_has_tcp_external_server_connection_details(self, instance_id, wait_until: int):
+    def wait_until_agent_dashboard_has_tcp_external_server_connection_details(self, hostname, wait_until: int):
         """Waits for agent's tcp external server connection details board to become available for up to 120 minutes.
 
         Args:
-            instance_id: AWS isntance ID
+            hostname: Hostname
             wait_until: Unix time until we wait for agent's tcp external server connection details board to become available.
 
         Returns: None
@@ -1201,19 +1201,19 @@ class AgentsHelper:
             if not first_try:
                 time.sleep(240)
             first_try = False
-            data_returned = self.fetch_agent_external_server_connection_details_tcp(filter_type="INSTANCE_ID", instance_id=instance_id)
+            data_returned = self.fetch_agent_external_server_connection_details_tcp(filter_type="HOSTNAME", hostname=hostname)
             if data_returned:
                 found = True
         if not found:
             raise TimeoutError(
-                f'Agent {instance_id} tcp external server connection details board is not ready.'
+                f'Agent {hostname} tcp external server connection details board is not ready.'
             )
 
-    def wait_until_agent_dashboard_has_list_of_active_executables(self, instance_id, wait_until: int):
+    def wait_until_agent_dashboard_has_list_of_active_executables(self, hostname, wait_until: int):
         """Waits for agent's list of active executables board to become available for up to 120 minutes.
 
         Args:
-            instance_id: AWS isntance ID
+            hostname: Hostname
             wait_until: Unix time until we wait for agent's list of active executables board to become available.
 
         Returns: None
@@ -1225,19 +1225,19 @@ class AgentsHelper:
             if not first_try:
                 time.sleep(240)
             first_try = False
-            data_returned = self.fetch_agent_list_of_active_executables(filter_type="INSTANCE_ID", instance_id=instance_id)
+            data_returned = self.fetch_agent_list_of_active_executables(filter_type="HOSTNAME", hostname=hostname)
             if data_returned:
                 found = True
         if not found:
             raise TimeoutError(
-                f'Agent {instance_id} list of active executables board is not ready.'
+                f'Agent {hostname} list of active executables board is not ready.'
             )
 
-    def wait_until_agent_dashboard_has_list_of_active_containers(self, instance_id, wait_until: int):
+    def wait_until_agent_dashboard_has_list_of_active_containers(self, hostname, wait_until: int):
         """Waits for agent's list of active containers to become available for up to 120 minutes.
 
         Args:
-            instance_id: AWS isntance ID
+            hostname: Hostname
             wait_until: Unix time until we wait for agent's list of active containers become available.
 
         Returns: None
@@ -1249,19 +1249,19 @@ class AgentsHelper:
             if not first_try:
                 time.sleep(240)
             first_try = False
-            data_returned = self.fetch_agent_active_containers(filter_type="INSTANCE_ID", instance_id=instance_id)
+            data_returned = self.fetch_agent_active_containers(filter_type="HOSTNAME", hostname=hostname)
             if data_returned:
                 found = True
         if not found:
             raise TimeoutError(
-                f'Agent {instance_id} list of active containers is not ready.'
+                f'Agent {hostname} list of active containers is not ready.'
             )
 
-    def wait_until_agent_dashboard_has_executable_info(self, instance_id, wait_until: int):
+    def wait_until_agent_dashboard_has_executable_info(self, hostname, wait_until: int):
         """Waits for agent's executable information board to become available for up to 120 minutes.
 
         Args:
-            instance_id: AWS isntance ID
+            hostname: Hostname
             wait_until: Unix time until we wait for agent's executable information board to become available.
 
         Returns: None
@@ -1273,19 +1273,19 @@ class AgentsHelper:
             if not first_try:
                 time.sleep(240)
             first_try = False
-            data_returned = self.fetch_agent_executable_info(filter_type="INSTANCE_ID", instance_id=instance_id)
+            data_returned = self.fetch_agent_executable_info(filter_type="HOSTNAME", hostname=hostname)
             if data_returned:
                 found = True
         if not found:
             raise TimeoutError(
-                f'Agent {instance_id} executable information board is not ready.'
+                f'Agent {hostname} executable information board is not ready.'
             )
 
-    def wait_until_agent_dashboard_has_machine_properties(self, instance_id, wait_until: int):
+    def wait_until_agent_dashboard_has_machine_properties(self, hostname, wait_until: int):
         """Waits for agent's machine properties board to become available for up to 120 minutes.
 
         Args:
-            instance_id: AWS isntance ID
+            hostname: Hostname
             wait_until: Unix time until we wait for agent's machine properties board to become available.
 
         Returns: None
@@ -1297,21 +1297,22 @@ class AgentsHelper:
             if not first_try:
                 time.sleep(240)
             first_try = False
-            data_returned = self.fetch_agent_machine_properties(filter_type="INSTANCE_ID", instance_id=instance_id)
+            data_returned = self.fetch_agent_machine_properties(filter_type="HOSTNAME", hostname=hostname)
             for data in data_returned:
-                assert data['TAGS']['InstanceId'] == instance_id, f"Expected to find instance id: {instance_id}, but found {data}"
+                assert data['HOSTNAME'] == hostname, f"Expected to find hostname: {hostname}, but found {data}"
                 machine_properties = True
         if not machine_properties:
             raise TimeoutError(
-                f'Agent {instance_id} machine properties board is not ready.'
+                f'Agent {hostname} machine properties board is not ready.'
                 f'Last data: {data}'
             )
 
-    def wait_until_agent_dashboard_has_machine_tag_summary(self, instance_id, wait_until: int):
+    def wait_until_agent_dashboard_has_machine_tag_summary(self, hostname, instance_id, wait_until: int):
         """Waits for agent's machine tag summary board to become available for up to 120 minutes.
 
         Args:
-            instance_id: AWS isntance ID
+            hostname: Hostname
+            instance_id: Instance Id
             wait_until: Unix time until we wait for agent's machine tag summary board to become available.
 
         Returns: None
@@ -1323,7 +1324,7 @@ class AgentsHelper:
             if not first_try:
                 time.sleep(240)
             first_try = False
-            data_returned = self.fetch_agent_machine_tag_summary(filter_type="INSTANCE_ID", instance_id=instance_id)
+            data_returned = self.fetch_agent_machine_tag_summary(filter_type="HOSTNAME", hostname=hostname)
             for data in data_returned:
                 if data['TAG'] == 'InstanceId':
                     assert data['VALUE'] == instance_id, f"Expected to find instance id: {instance_id}, but found {data}"
@@ -1331,15 +1332,15 @@ class AgentsHelper:
                     break
         if not machine_tag_summary:
             raise TimeoutError(
-                f'Agent {instance_id} machine tag summary board is not ready.'
+                f'Agent {hostname} machine tag summary board is not ready.'
                 f'Last data: {data}'
             )
 
-    def wait_until_agent_dashboard_has_interfaces_on_a_machine(self, instance_id, wait_until: int):
+    def wait_until_agent_dashboard_has_interfaces_on_a_machine(self, hostname, wait_until: int):
         """Waits for agent's interfaces on a machine board to become available for up to 120 minutes.
 
         Args:
-            instance_id: AWS isntance ID
+            hostname: Hostname
             wait_until: Unix time until we wait for agent's interfaces on a machine board to become available.
 
         Returns: None
@@ -1351,19 +1352,19 @@ class AgentsHelper:
             if not first_try:
                 time.sleep(240)
             first_try = False
-            data_returned = self.fetch_agent_interfaces(filter_type="INSTANCE_ID", instance_id=instance_id)
+            data_returned = self.fetch_agent_interfaces(filter_type="HOSTNAME", hostname=hostname)
             if data_returned:
                 found = True
         if not found:
             raise TimeoutError(
-                f'Agent {instance_id} interfaces on a machine board is not ready.'
+                f'Agent {hostname} interfaces on a machine board is not ready.'
             )
 
-    def wait_until_agent_dashboard_has_exposed_ports(self, instance_id, wait_until: int):
+    def wait_until_agent_dashboard_has_exposed_ports(self, hostname, wait_until: int):
         """Waits for agent's exposed ports board to become available for up to 120 minutes.
 
         Args:
-            instance_id: AWS isntance ID
+            hostname: Hostname
             wait_until: Unix time until we wait for agent's exposed ports board to become available.
 
         Returns: None
@@ -1375,19 +1376,19 @@ class AgentsHelper:
             if not first_try:
                 time.sleep(240)
             first_try = False
-            data_returned = self.fetch_agent_exposed_ports(filter_type="INSTANCE_ID", instance_id=instance_id)
+            data_returned = self.fetch_agent_exposed_ports(filter_type="HOSTNAME", hostname=hostname)
             if data_returned:
                 found = True
         if not found:
             raise TimeoutError(
-                f'Agent {instance_id} exposed ports board is not ready.'
+                f'Agent {hostname} exposed ports board is not ready.'
             )
 
-    def wait_until_agent_dashboard_has_udp_external_client_connection_details(self, instance_id, wait_until: int):
+    def wait_until_agent_dashboard_has_udp_external_client_connection_details(self, hostname, wait_until: int):
         """Waits for agent's UDP external client connection details board to become available for up to 120 minutes.
 
         Args:
-            instance_id: AWS isntance ID
+            hostname: Hostname
             wait_until: Unix time until we wait for agent's UDP external client connection details board to become available.
 
         Returns: None
@@ -1399,19 +1400,19 @@ class AgentsHelper:
             if not first_try:
                 time.sleep(240)
             first_try = False
-            data_returned = self.fetch_agent_external_client_connection_detail_udp(filter_type="INSTANCE_ID", instance_id=instance_id)
+            data_returned = self.fetch_agent_external_client_connection_detail_udp(filter_type="HOSTNAME", hostname=hostname)
             if data_returned:
                 found = True
         if not found:
             raise TimeoutError(
-                f'Agent {instance_id} UDP external client connection details board is not ready.'
+                f'Agent {hostname} UDP external client connection details board is not ready.'
             )
 
-    def wait_until_agent_dashboard_has_domain_lookups(self, instance_id, wait_until: int):
+    def wait_until_agent_dashboard_has_domain_lookups(self, hostname, wait_until: int):
         """Waits for agent's domain lookups board to become available for up to 120 minutes.
 
         Args:
-            instance_id: AWS isntance ID
+            hostname: Hostname
             wait_until: Unix time until we wait for agent's domain lookups board to become available.
 
         Returns: None
@@ -1423,19 +1424,19 @@ class AgentsHelper:
             if not first_try:
                 time.sleep(240)
             first_try = False
-            data_returned = self.fetch_agent_domain_lookups(filter_type="INSTANCE_ID", instance_id=instance_id)
+            data_returned = self.fetch_agent_domain_lookups(filter_type="HOSTNAME", hostname=hostname)
             if data_returned:
                 found = True
         if not found:
             raise TimeoutError(
-                f'Agent {instance_id} domain lookups board is not ready.'
+                f'Agent {hostname} domain lookups board is not ready.'
             )
 
-    def wait_until_agent_dashboard_has_unique_process_details(self, instance_id, wait_until: int):
+    def wait_until_agent_dashboard_has_unique_process_details(self, hostname, wait_until: int):
         """Waits for agent's unique process details board to become available for up to 120 minutes.
 
         Args:
-            instance_id: AWS isntance ID
+            hostname: Hostname
             wait_until: Unix time until we wait for agent's unique process details board to become available.
 
         Returns: None
@@ -1447,19 +1448,19 @@ class AgentsHelper:
             if not first_try:
                 time.sleep(240)
             first_try = False
-            data_returned = self.fetch_agent_unique_process_details(filter_type="INSTANCE_ID", instance_id=instance_id)
+            data_returned = self.fetch_agent_unique_process_details(filter_type="HOSTNAME", hostname=hostname)
             if data_returned:
                 found = True
         if not found:
             raise TimeoutError(
-                f'Agent {instance_id} unique process details board is not ready.'
+                f'Agent {hostname} unique process details board is not ready.'
             )
 
-    def wait_until_agent_dashboard_has_tcp_internal_connection_to_internal_devices_without_agents(self, instance_id, wait_until: int):
+    def wait_until_agent_dashboard_has_tcp_internal_connection_to_internal_devices_without_agents(self, hostname, wait_until: int):
         """Waits for agent's TCP-Internal Connection to Internal Devices without Agents board to become available for up to 120 minutes.
 
         Args:
-            instance_id: AWS isntance ID
+            hostname: Hostname
             wait_until: Unix time until we wait for agent's TCP-Internal Connection to Internal Devices without Agents board to become available.
 
         Returns: None
@@ -1471,19 +1472,19 @@ class AgentsHelper:
             if not first_try:
                 time.sleep(240)
             first_try = False
-            data_returned = self.fetch_agent_tcp_internal_connection_to_internal_devices_without_agents(filter_type="INSTANCE_ID", instance_id=instance_id)
+            data_returned = self.fetch_agent_tcp_internal_connection_to_internal_devices_without_agents(filter_type="HOSTNAME", hostname=hostname)
             if data_returned:
                 found = True
         if not found:
             raise TimeoutError(
-                f'Agent {instance_id} TCP-Internal Connection to Internal Devices without Agents board is not ready.'
+                f'Agent {hostname} TCP-Internal Connection to Internal Devices without Agents board is not ready.'
             )
 
-    def wait_until_agent_dashboard_has_tcp_internal_connection_from_internal_devices_without_agents(self, instance_id, wait_until: int):
+    def wait_until_agent_dashboard_has_tcp_internal_connection_from_internal_devices_without_agents(self, hostname, wait_until: int):
         """Waits for agent's TCP-Internal Connection from Internal Devices without Agents board to become available for up to 120 minutes.
 
         Args:
-            instance_id: AWS isntance ID
+            hostname: Hostname
             wait_until: Unix time until we wait for agent's TCP-Internal Connection from Internal Devices without Agents board to become available.
 
         Returns: None
@@ -1495,19 +1496,19 @@ class AgentsHelper:
             if not first_try:
                 time.sleep(240)
             first_try = False
-            data_returned = self.fetch_agent_tcp_internal_connection_from_internal_devices_without_agents(filter_type="INSTANCE_ID", instance_id=instance_id)
+            data_returned = self.fetch_agent_tcp_internal_connection_from_internal_devices_without_agents(filter_type="HOSTNAME", hostname=hostname)
             if data_returned:
                 found = True
         if not found:
             raise TimeoutError(
-                f'Agent {instance_id} TCP-Internal Connection from Internal Devices without Agents board is not ready.'
+                f'Agent {hostname} TCP-Internal Connection from Internal Devices without Agents board is not ready.'
             )
 
-    def wait_until_agent_dashboard_has_udp_internal_connection_to_internal_devices_without_agents(self, instance_id, wait_until: int):
+    def wait_until_agent_dashboard_has_udp_internal_connection_to_internal_devices_without_agents(self, hostname, wait_until: int):
         """Waits for agent's UDP-Internal Connection to Internal Devices without Agents board to become available for up to 120 minutes.
 
         Args:
-            instance_id: AWS isntance ID
+            hostname: Hostname
             wait_until: Unix time until we wait for agent's UDP-Internal Connection to Internal Devices without Agents board to become available.
 
         Returns: None
@@ -1519,19 +1520,19 @@ class AgentsHelper:
             if not first_try:
                 time.sleep(240)
             first_try = False
-            data_returned = self.fetch_agent_udp_internal_connection_to_internal_devices_without_agents(filter_type="INSTANCE_ID", instance_id=instance_id)
+            data_returned = self.fetch_agent_udp_internal_connection_to_internal_devices_without_agents(filter_type="HOSTNAME", hostname=hostname)
             if data_returned:
                 found = True
         if not found:
             raise TimeoutError(
-                f'Agent {instance_id} UDP-Internal Connection to Internal Devices without Agents board is not ready.'
+                f'Agent {hostname} UDP-Internal Connection to Internal Devices without Agents board is not ready.'
             )
 
-    def wait_until_agent_dashboard_has_udp_internal_connection_from_internal_devices_without_agents(self, instance_id, wait_until: int):
+    def wait_until_agent_dashboard_has_udp_internal_connection_from_internal_devices_without_agents(self, hostname, wait_until: int):
         """Waits for agent's UDP-Internal Connection to Internal Devices without Agents board from become available for up to 120 minutes.
 
         Args:
-            instance_id: AWS isntance ID
+            hostname: Hostname
             wait_until: Unix time until we wait for agent's UDP-Internal Connection from Internal Devices without Agents board to become available.
 
         Returns: None
@@ -1543,19 +1544,19 @@ class AgentsHelper:
             if not first_try:
                 time.sleep(240)
             first_try = False
-            data_returned = self.fetch_agent_udp_internal_connection_from_internal_devices_without_agents(filter_type="INSTANCE_ID", instance_id=instance_id)
+            data_returned = self.fetch_agent_udp_internal_connection_from_internal_devices_without_agents(filter_type="HOSTNAME", hostname=hostname)
             if data_returned:
                 found = True
         if not found:
             raise TimeoutError(
-                f'Agent {instance_id} UDP-Internal Connection from Internal Devices without Agents board is not ready.'
+                f'Agent {hostname} UDP-Internal Connection from Internal Devices without Agents board is not ready.'
             )
 
-    def wait_until_agent_dashboard_has_alerts(self, instance_id, wait_until: int):
+    def wait_until_agent_dashboard_has_alerts(self, hostname, wait_until: int):
         """Waits for agent's alerts board to become available for up to 120 minutes.
 
         Args:
-            instance_id: AWS isntance ID
+            hostname: Hostname
             wait_until: Unix time until we wait for agent's alerts board to become available.
 
         Returns: None
@@ -1567,12 +1568,12 @@ class AgentsHelper:
             if not first_try:
                 time.sleep(240)
             first_try = False
-            data_returned = self.fetch_agent_alerts(filter_type="INSTANCE_ID", instance_id=instance_id)
+            data_returned = self.fetch_agent_alerts(filter_type="HOSTNAME", hostname=hostname)
             if data_returned:
                 found = True
         if not found:
             raise TimeoutError(
-                f'Agent {instance_id} alerts board is not ready.'
+                f'Agent {hostname} alerts board is not ready.'
             )
 
     def list_all_agents_in_new_dashboard(self) -> list:
@@ -1585,7 +1586,7 @@ class AgentsHelper:
         }
         agent_inventory_table_response = NewAgentDashboard(self.user_api).get_agent_inventory(payload=payload)
         assert agent_inventory_table_response.status_code == 200, f"Failed to get agent inventory inside new agent dashboard, error: {agent_inventory_table_response.text}"
-        logger.info(f"All agents inside agent inventory table: {json.dumps(agent_inventory_table_response.json(), indent=2)}")
+        logger.debug(f"All agents inside agent inventory table: {json.dumps(agent_inventory_table_response.json(), indent=2)}")
         return agent_inventory_table_response.json()['data']
 
     def wait_until_agent_is_added_to_new_dashboard(self, instance_id, wait_until: int):

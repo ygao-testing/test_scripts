@@ -45,6 +45,7 @@ class GcpServiceAccountSettings:
     type: str
     project_id: str
     org_id: str
+    org_name: str
     private_key_id: str
     private_key: str
     client_email: str

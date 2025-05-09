@@ -4,7 +4,7 @@ supported_csps: list = ['aws', 'gcp', 'azure']
 
 # Make sure linux_tf_modules is the last list of modules
 linux_tf_modules: list = [
-    'alpine3.19',
+    'alpine3.19', 'alpine3.20', 'alpine3.21',
     'ubuntu1604', 'ubuntu1804', 'ubuntu2004', 'ubuntu2204', 'ubuntu2404',
     'rhel8.9', 'rhel9.4',
     'rocky8.9', 'rocky9.4',

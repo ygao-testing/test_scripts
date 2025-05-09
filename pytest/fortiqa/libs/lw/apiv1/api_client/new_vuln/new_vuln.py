@@ -1,6 +1,6 @@
 import logging
 import requests
-# import json
+import json
 import fortiqa.libs.lw.apiv1.api_client.new_vuln.payloads as payloads
 
 from typing import Any, Dict
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class NewVulnerability:
     """A class to interact with the Vulnerability V1 API."""
 
-    def __init__(self, api_v1_client: ApiV1Client, limit: int = 2000, pageSize: int = 2000) -> None:
+    def __init__(self, api_v1_client: ApiV1Client, limit: int = 5000, pageSize: int = 5000) -> None:
         """Initializes the NewVulnerability class.
 
         Args:
@@ -73,7 +73,7 @@ class NewVulnerability:
         Returns:
             requests.Response: The response object from the API call.
         """
-        logger.info("query_vulnerability()")
+        logger.debug("query_vulnerability()")
         response = self._user_api.post(url=f"{self._api_url}/vulnsWithAggregations?{self._param}", payload=payload)
         # logger.debug(f"Query Vulnerability response: {response.text}")
         return response
@@ -104,9 +104,9 @@ class NewVulnerability:
         Returns:
             requests.Response: The response object from the API call.
         """
-        logger.info("query_host()")
+        logger.debug("query_host()")
         payload["returns"] = HostReturnFields.generate_return_payload()
-        # logger.info(f"Payloads: {json.dumps(payload['filters'], indent=2)}")
+        # logger.debug(f"Payloads: {json.dumps(payload['filters'], indent=2)}")
         response = self._user_api.post(url=f"{self._api_url}/hostsWithAggregations?{self._param}", payload=payload)
         # logger.debug(f"Query Hosts response: {response.text}")
         return response
@@ -137,8 +137,8 @@ class NewVulnerability:
         Returns:
             requests.Response: The response object from the API call.
         """
-        logger.info("query_packages()")
-        # logger.info(f"Payloads: {json.dumps(payload['filters'], indent=2)}")
+        logger.debug("query_packages()")
+        # logger.debug(f"Payloads: {json.dumps(payload['filters'], indent=2)}")
         payload["returns"] = PackageReturnFields.generate_return_payload()
         response = self._user_api.post(url=f"{self._api_url}/packagesByNameWithAggregations?{self._param}", payload=payload)
         # logger.debug(f"Query Packages response: {response.text}")
@@ -170,8 +170,8 @@ class NewVulnerability:
         Returns:
             requests.Response: The response object from the API call.
         """
-        logger.info("query_packages_with_mid()")
-        # logger.info(f"Payloads: {json.dumps(payload['filters'], indent=2)}")
+        logger.debug("query_packages_with_mid()")
+        # logger.debug(f"Payloads: {json.dumps(payload['filters'], indent=2)}")
         payload["returns"] = PackageReturnFieldsAssociateWithHost.generate_return_payload()
         response = self._user_api.post(url=f"{self._api_url}/packageInstancesWithAggregations?{self._param}", payload=payload)
         # logger.debug(f"Query Packages response: {response.text}")
@@ -203,8 +203,8 @@ class NewVulnerability:
         Returns:
             requests.Response: The response object from the API call.
         """
-        logger.info("query_images()")
-        # logger.info(f"Payloads: {json.dumps(payload['filters'], indent=2)}")
+        logger.debug("query_images()")
+        # logger.debug(f"Payloads: {json.dumps(payload['filters'], indent=2)}")
         payload["returns"] = ImageReturnFields.generate_return_payload()
         response = self._user_api.post(url=f"{self._api_url}/imagesWithAggregations?{self._param}", payload=payload)
         # logger.debug(f"Query Images response: {response.text}")
@@ -236,8 +236,8 @@ class NewVulnerability:
         Returns:
             requests.Response: The response object from the API call.
         """
-        logger.info("query_unique_vuln_by_host()")
-        # logger.info(f"Payloads: {json.dumps(payload['filters'], indent=2)}")
+        logger.debug("query_unique_vuln_by_host()")
+        # logger.debug(f"Payloads: {json.dumps(payload['filters'], indent=2)}")
         response = self._user_api.post(url=f"{self._api_url}/hostVulnObservations?{self._param}", payload=payload)
         # logger.debug(f"Query Unique Vulnerabilities by Host response: {response.text}")
         return response
@@ -268,8 +268,8 @@ class NewVulnerability:
         Returns:
             requests.Response: The response object from the API call.
         """
-        logger.info("query_unique_vuln_by_image()")
-        # logger.info(f"Payloads: {json.dumps(payload['filters'], indent=2)}")
+        logger.debug("query_unique_vuln_by_image()")
+        # logger.debug(f"Payloads: {json.dumps(payload['filters'], indent=2)}")
         response = self._user_api.post(url=f"{self._api_url}/imageVulnObservations?{self._param}", payload=payload)
         # logger.debug(f"Query Unique Vulnerabilities by Container Image response: {response.text}")
         return response
@@ -279,8 +279,8 @@ class NewVulnerability:
         Helper function to generate New Vulnerability payload
         :param new_vuln_object: New Vulnerability filter object
         """
-        start_date = anchored_timestamp - timedelta(days=1)
-        end_date = anchored_timestamp + timedelta(days=1)
+        start_date = anchored_timestamp - timedelta(hours=10)
+        end_date = anchored_timestamp + timedelta(hours=10)
         template: Dict[str, Any] = {
             "paramInfo": [
                 {
@@ -338,12 +338,8 @@ class NewVulnerability:
             case "hosts":
                 template['returns'] = HostReturnFields.generate_return_payload()
                 template['paramInfo'].append({
-                    "name": "ApplyFiltersByIntersection",
-                    "value": ""
-                })
-                template['paramInfo'].append({
                     "name": "ActiveFilterCards",
-                    "value": "VulnPres_PackageFilters,VulnPres_VulnFilters"
+                    "value": "VulnPres_HostFilters,VulnPres_VulnFilters"
                 })
             case "cves":
                 template['returns'] = VulnerabilitiesReturnFields.generate_return_payload()
@@ -373,7 +369,7 @@ class NewVulnerability:
                 })
                 template['paramInfo'].append({
                     "name": "ActiveFilterCards",
-                    "value": "VulnPres_VulnObservationFilters,VulnPres_VulnFilters"
+                    "value": "VulnPres_VulnFilters,VulnPres_VulnObservationFilters,VulnPres_HostFilters"
                 })
             case "unique_vuln_by_host":
                 template['returns'] = UniqueVulnByHostReturnFields.generate_return_payload()
@@ -387,4 +383,5 @@ class NewVulnerability:
                     "name": "ActiveFilterCards",
                     "value": "VulnPres_VulnFilters"
                 })
+        logger.debug(f"Generated Payload: {json.dumps(template, indent=2)}")
         return template

@@ -7,7 +7,7 @@ from fortiqa.tests.e2e.agents.host_versions import windows_tf_modules, linux_tf_
 logger = logging.getLogger(__name__)
 
 
-def test_agent_dashboard_unique_machines(api_v1_client, os_version, csp, agent_host, agent_host_tf_output):
+def test_agent_dashboard_unique_machines(api_v1_client, os_version, csp, agent_host, agent_host_tf_output, wait_until_host_is_active, terraform_owner):
     """Test agent dashboard shows Unique Machines
 
     Given: all agents are deployed
@@ -22,13 +22,11 @@ def test_agent_dashboard_unique_machines(api_v1_client, os_version, csp, agent_h
     timeout = 15000
     deployment_time = agent_host['deployment_time']
     deployment_timestamp = agent_host['deployment_timestamp']
-    agent_host_instance_id = agent_host_tf_output['agent_host_instance_id']
     agents_helper = AgentsHelper(api_v1_client, deployment_timestamp)
-    agents_helper.wait_until_agent_is_active(agent_host_instance_id, wait_until=deployment_time+timeout)
-    agents_helper.wait_until_agent_dashboard_has_unique_machines(instance_id=agent_host_instance_id, wait_until=deployment_time+timeout)
+    agents_helper.wait_until_agent_dashboard_has_unique_machines(hostname=terraform_owner, wait_until=deployment_time+timeout)
 
 
-def test_agent_dashboard_unique_users(api_v1_client, os_version, csp, agent_host, agent_host_tf_output):
+def test_agent_dashboard_unique_users(api_v1_client, os_version, csp, agent_host, agent_host_tf_output, wait_until_host_is_active, terraform_owner):
     """Test agent dashboard shows Unique Users
 
     Given: all agents are deployed
@@ -44,13 +42,11 @@ def test_agent_dashboard_unique_users(api_v1_client, os_version, csp, agent_host
     timeout = 15000
     deployment_time = agent_host['deployment_time']
     deployment_timestamp = agent_host['deployment_timestamp']
-    agent_host_instance_id = agent_host_tf_output['agent_host_instance_id']
     agents_helper = AgentsHelper(api_v1_client, deployment_timestamp)
-    agents_helper.wait_until_agent_is_active(agent_host_instance_id, wait_until=deployment_time+timeout)
-    agents_helper.wait_until_agent_dashboard_has_unique_users(instance_id=agent_host_instance_id, wait_until=deployment_time+timeout)
+    agents_helper.wait_until_agent_dashboard_has_unique_users(hostname=terraform_owner, wait_until=deployment_time+timeout)
 
 
-def test_agent_dashboard_total_bytes(api_v1_client, os_version, csp, agent_host, agent_host_tf_output):
+def test_agent_dashboard_total_bytes(api_v1_client, os_version, csp, agent_host, agent_host_tf_output, wait_until_host_is_active, terraform_owner):
     """Test agent dashboard shows total bytes
 
     Given: all agents are deployed
@@ -66,13 +62,11 @@ def test_agent_dashboard_total_bytes(api_v1_client, os_version, csp, agent_host,
     timeout = 15000
     deployment_time = agent_host['deployment_time']
     deployment_timestamp = agent_host['deployment_timestamp']
-    agent_host_instance_id = agent_host_tf_output['agent_host_instance_id']
     agents_helper = AgentsHelper(api_v1_client, deployment_timestamp)
-    agents_helper.wait_until_agent_is_active(agent_host_instance_id, wait_until=deployment_time+timeout)
-    agents_helper.wait_until_agent_dashboard_has_total_bytes(instance_id=agent_host_instance_id, wait_until=deployment_time+timeout)
+    agents_helper.wait_until_agent_dashboard_has_total_bytes(hostname=terraform_owner, wait_until=deployment_time+timeout)
 
 
-def test_agent_dashboard_total_connections(api_v1_client, os_version, csp, agent_host, agent_host_tf_output):
+def test_agent_dashboard_total_connections(api_v1_client, os_version, csp, agent_host, agent_host_tf_output, wait_until_host_is_active, terraform_owner):
     """Test agent dashboard shows total connections
 
     Given: all agents are deployed
@@ -88,13 +82,11 @@ def test_agent_dashboard_total_connections(api_v1_client, os_version, csp, agent
     timeout = 15000
     deployment_time = agent_host['deployment_time']
     deployment_timestamp = agent_host['deployment_timestamp']
-    agent_host_instance_id = agent_host_tf_output['agent_host_instance_id']
     agents_helper = AgentsHelper(api_v1_client, deployment_timestamp)
-    agents_helper.wait_until_agent_is_active(agent_host_instance_id, wait_until=deployment_time+timeout)
-    agents_helper.wait_until_agent_dashboard_has_total_connections(instance_id=agent_host_instance_id, wait_until=deployment_time+timeout)
+    agents_helper.wait_until_agent_dashboard_has_total_connections(hostname=terraform_owner, wait_until=deployment_time+timeout)
 
 
-def test_agent_dashboard_external_out_bytes(api_v1_client, os_version, csp, agent_host, agent_host_tf_output):
+def test_agent_dashboard_external_out_bytes(api_v1_client, os_version, csp, agent_host, agent_host_tf_output, wait_until_host_is_active, terraform_owner):
     """Test agent dashboard shows external out bytes
 
     Given: all agents are deployed
@@ -110,13 +102,11 @@ def test_agent_dashboard_external_out_bytes(api_v1_client, os_version, csp, agen
     timeout = 15000
     deployment_time = agent_host['deployment_time']
     deployment_timestamp = agent_host['deployment_timestamp']
-    agent_host_instance_id = agent_host_tf_output['agent_host_instance_id']
     agents_helper = AgentsHelper(api_v1_client, deployment_timestamp)
-    agents_helper.wait_until_agent_is_active(agent_host_instance_id, wait_until=deployment_time+timeout)
-    agents_helper.wait_until_agent_dashboard_has_external_out_bytes(instance_id=agent_host_instance_id, wait_until=deployment_time+timeout)
+    agents_helper.wait_until_agent_dashboard_has_external_out_bytes(hostname=terraform_owner, wait_until=deployment_time+timeout)
 
 
-def test_agent_dashboard_external_in_bytes(api_v1_client, os_version, csp, agent_host, agent_host_tf_output):
+def test_agent_dashboard_external_in_bytes(api_v1_client, os_version, csp, agent_host, agent_host_tf_output, wait_until_host_is_active, terraform_owner):
     """Test agent dashboard shows external in bytes
 
     Given: all agents are deployed
@@ -132,13 +122,11 @@ def test_agent_dashboard_external_in_bytes(api_v1_client, os_version, csp, agent
     timeout = 15000
     deployment_time = agent_host['deployment_time']
     deployment_timestamp = agent_host['deployment_timestamp']
-    agent_host_instance_id = agent_host_tf_output['agent_host_instance_id']
     agents_helper = AgentsHelper(api_v1_client, deployment_timestamp)
-    agents_helper.wait_until_agent_is_active(agent_host_instance_id, wait_until=deployment_time+timeout)
-    agents_helper.wait_until_agent_dashboard_has_external_in_bytes(instance_id=agent_host_instance_id, wait_until=deployment_time+timeout)
+    agents_helper.wait_until_agent_dashboard_has_external_in_bytes(hostname=terraform_owner, wait_until=deployment_time+timeout)
 
 
-def test_agent_dashboard_external_out_connections(api_v1_client, os_version, csp, agent_host, agent_host_tf_output):
+def test_agent_dashboard_external_out_connections(api_v1_client, os_version, csp, agent_host, agent_host_tf_output, wait_until_host_is_active, terraform_owner):
     """Test agent dashboard shows external out connections
 
     Given: all agents are deployed
@@ -154,13 +142,11 @@ def test_agent_dashboard_external_out_connections(api_v1_client, os_version, csp
     timeout = 15000
     deployment_time = agent_host['deployment_time']
     deployment_timestamp = agent_host['deployment_timestamp']
-    agent_host_instance_id = agent_host_tf_output['agent_host_instance_id']
     agents_helper = AgentsHelper(api_v1_client, deployment_timestamp)
-    agents_helper.wait_until_agent_is_active(agent_host_instance_id, wait_until=deployment_time+timeout)
-    agents_helper.wait_until_agent_dashboard_has_external_out_connections(instance_id=agent_host_instance_id, wait_until=deployment_time+timeout)
+    agents_helper.wait_until_agent_dashboard_has_external_out_connections(hostname=terraform_owner, wait_until=deployment_time+timeout)
 
 
-def test_agent_dashboard_external_in_connections(api_v1_client, os_version, csp, agent_host, agent_host_tf_output):
+def test_agent_dashboard_external_in_connections(api_v1_client, os_version, csp, agent_host, agent_host_tf_output, wait_until_host_is_active, terraform_owner):
     """Test agent dashboard shows external in connections
 
     Given: all agents are deployed
@@ -176,13 +162,11 @@ def test_agent_dashboard_external_in_connections(api_v1_client, os_version, csp,
     timeout = 15000
     deployment_time = agent_host['deployment_time']
     deployment_timestamp = agent_host['deployment_timestamp']
-    agent_host_instance_id = agent_host_tf_output['agent_host_instance_id']
     agents_helper = AgentsHelper(api_v1_client, deployment_timestamp)
-    agents_helper.wait_until_agent_is_active(agent_host_instance_id, wait_until=deployment_time+timeout)
-    agents_helper.wait_until_agent_dashboard_has_external_in_connections(instance_id=agent_host_instance_id, wait_until=deployment_time+timeout)
+    agents_helper.wait_until_agent_dashboard_has_external_in_connections(hostname=terraform_owner, wait_until=deployment_time+timeout)
 
 
-def test_agent_dashboard_instance_id_mapping(api_v1_client, os_version, csp, agent_host, agent_host_tf_output):
+def test_agent_dashboard_instance_id_mapping(api_v1_client, os_version, csp, agent_host, agent_host_tf_output, wait_until_host_is_active, terraform_owner):
     """Test agent dashboard shows instance ID mapping
 
     Given: all agents are deployed
@@ -198,13 +182,11 @@ def test_agent_dashboard_instance_id_mapping(api_v1_client, os_version, csp, age
     timeout = 15000
     deployment_time = agent_host['deployment_time']
     deployment_timestamp = agent_host['deployment_timestamp']
-    agent_host_instance_id = agent_host_tf_output['agent_host_instance_id']
     agents_helper = AgentsHelper(api_v1_client, deployment_timestamp)
-    agents_helper.wait_until_agent_is_active(agent_host_instance_id, wait_until=deployment_time+timeout)
-    agents_helper.wait_until_agent_dashboard_has_instance_id_mapping(instance_id=agent_host_instance_id, wait_until=deployment_time+timeout)
+    agents_helper.wait_until_agent_dashboard_has_instance_id_mapping(hostname=terraform_owner, wait_until=deployment_time+timeout)
 
 
-def test_agent_dashboard_tcp_external_server_connection_details(api_v1_client, os_version, csp, agent_host, agent_host_tf_output):
+def test_agent_dashboard_tcp_external_server_connection_details(api_v1_client, os_version, csp, agent_host, agent_host_tf_output, wait_until_host_is_active, terraform_owner):
     """Test agent dashboard shows tcp external server connection details
 
     Given: all agents are deployed
@@ -220,13 +202,11 @@ def test_agent_dashboard_tcp_external_server_connection_details(api_v1_client, o
     timeout = 15000
     deployment_time = agent_host['deployment_time']
     deployment_timestamp = agent_host['deployment_timestamp']
-    agent_host_instance_id = agent_host_tf_output['agent_host_instance_id']
     agents_helper = AgentsHelper(api_v1_client, deployment_timestamp)
-    agents_helper.wait_until_agent_is_active(agent_host_instance_id, wait_until=deployment_time+timeout)
-    agents_helper.wait_until_agent_dashboard_has_tcp_external_server_connection_details(instance_id=agent_host_instance_id, wait_until=deployment_time+timeout)
+    agents_helper.wait_until_agent_dashboard_has_tcp_external_server_connection_details(hostname=terraform_owner, wait_until=deployment_time+timeout)
 
 
-def test_agent_dashboard_active_executables(api_v1_client, os_version, csp, agent_host, agent_host_tf_output):
+def test_agent_dashboard_active_executables(api_v1_client, os_version, csp, agent_host, agent_host_tf_output, wait_until_host_is_active, terraform_owner):
     """Test agent dashboard shows list of active executables
 
     Given: all agents are deployed
@@ -242,13 +222,11 @@ def test_agent_dashboard_active_executables(api_v1_client, os_version, csp, agen
     timeout = 15000
     deployment_time = agent_host['deployment_time']
     deployment_timestamp = agent_host['deployment_timestamp']
-    agent_host_instance_id = agent_host_tf_output['agent_host_instance_id']
     agents_helper = AgentsHelper(api_v1_client, deployment_timestamp)
-    agents_helper.wait_until_agent_is_active(agent_host_instance_id, wait_until=deployment_time+timeout)
-    agents_helper.wait_until_agent_dashboard_has_list_of_active_executables(instance_id=agent_host_instance_id, wait_until=deployment_time+timeout)
+    agents_helper.wait_until_agent_dashboard_has_list_of_active_executables(hostname=terraform_owner, wait_until=deployment_time+timeout)
 
 
-def test_agent_dashboard_executables_info(api_v1_client, os_version, csp, agent_host, agent_host_tf_output):
+def test_agent_dashboard_executables_info(api_v1_client, os_version, csp, agent_host, agent_host_tf_output, wait_until_host_is_active, terraform_owner):
     """Test agent dashboard shows executables details
 
     Given: all agents are deployed
@@ -264,13 +242,11 @@ def test_agent_dashboard_executables_info(api_v1_client, os_version, csp, agent_
     timeout = 15000
     deployment_time = agent_host['deployment_time']
     deployment_timestamp = agent_host['deployment_timestamp']
-    agent_host_instance_id = agent_host_tf_output['agent_host_instance_id']
     agents_helper = AgentsHelper(api_v1_client, deployment_timestamp)
-    agents_helper.wait_until_agent_is_active(agent_host_instance_id, wait_until=deployment_time+timeout)
-    agents_helper.wait_until_agent_dashboard_has_executable_info(instance_id=agent_host_instance_id, wait_until=deployment_time+timeout)
+    agents_helper.wait_until_agent_dashboard_has_executable_info(hostname=terraform_owner, wait_until=deployment_time+timeout)
 
 
-def test_agent_dashboard_machine_properties(api_v1_client, os_version, csp, agent_host, agent_host_tf_output):
+def test_agent_dashboard_machine_properties(api_v1_client, os_version, csp, agent_host, agent_host_tf_output, wait_until_host_is_active, terraform_owner):
     """Test agent dashboard shows machine properties
 
     Given: all agents are deployed
@@ -286,13 +262,11 @@ def test_agent_dashboard_machine_properties(api_v1_client, os_version, csp, agen
     timeout = 15000
     deployment_time = agent_host['deployment_time']
     deployment_timestamp = agent_host['deployment_timestamp']
-    agent_host_instance_id = agent_host_tf_output['agent_host_instance_id']
     agents_helper = AgentsHelper(api_v1_client, deployment_timestamp)
-    agents_helper.wait_until_agent_is_active(agent_host_instance_id, wait_until=deployment_time+timeout)
-    agents_helper.wait_until_agent_dashboard_has_machine_properties(instance_id=agent_host_instance_id, wait_until=deployment_time+timeout)
+    agents_helper.wait_until_agent_dashboard_has_machine_properties(hostname=terraform_owner, wait_until=deployment_time+timeout)
 
 
-def test_agent_dashboard_machine_tags(api_v1_client, os_version, csp, agent_host, agent_host_tf_output):
+def test_agent_dashboard_machine_tags(api_v1_client, os_version, csp, agent_host, agent_host_tf_output, wait_until_host_is_active, terraform_owner):
     """Test agent dashboard shows machine tags
 
     Given: all agents are deployed
@@ -308,13 +282,11 @@ def test_agent_dashboard_machine_tags(api_v1_client, os_version, csp, agent_host
     timeout = 15000
     deployment_time = agent_host['deployment_time']
     deployment_timestamp = agent_host['deployment_timestamp']
-    agent_host_instance_id = agent_host_tf_output['agent_host_instance_id']
     agents_helper = AgentsHelper(api_v1_client, deployment_timestamp)
-    agents_helper.wait_until_agent_is_active(agent_host_instance_id, wait_until=deployment_time+timeout)
-    agents_helper.wait_until_agent_dashboard_has_machine_tag_summary(instance_id=agent_host_instance_id, wait_until=deployment_time+timeout)
+    agents_helper.wait_until_agent_dashboard_has_machine_tag_summary(hostname=terraform_owner, instance_id=agent_host_tf_output['agent_host_instance_id'], wait_until=deployment_time+timeout)
 
 
-def test_agent_dashboard_unique_process_details(api_v1_client, os_version, csp, agent_host, agent_host_tf_output):
+def test_agent_dashboard_unique_process_details(api_v1_client, os_version, csp, agent_host, agent_host_tf_output, wait_until_host_is_active, terraform_owner):
     """Test agent dashboard shows unique process details
 
     Given: all agents are deployed
@@ -330,13 +302,11 @@ def test_agent_dashboard_unique_process_details(api_v1_client, os_version, csp, 
     timeout = 15000
     deployment_time = agent_host['deployment_time']
     deployment_timestamp = agent_host['deployment_timestamp']
-    agent_host_instance_id = agent_host_tf_output['agent_host_instance_id']
     agents_helper = AgentsHelper(api_v1_client, deployment_timestamp)
-    agents_helper.wait_until_agent_is_active(agent_host_instance_id, wait_until=deployment_time+timeout)
-    agents_helper.wait_until_agent_dashboard_has_unique_process_details(instance_id=agent_host_instance_id, wait_until=deployment_time+timeout)
+    agents_helper.wait_until_agent_dashboard_has_unique_process_details(hostname=terraform_owner, wait_until=deployment_time+timeout)
 
 
-def test_agent_dashboard_exposed_ports(api_v1_client, os_version, csp, agent_host, agent_host_tf_output):
+def test_agent_dashboard_exposed_ports(api_v1_client, os_version, csp, agent_host, agent_host_tf_output, wait_until_host_is_active, terraform_owner):
     """Test agent dashboard shows exposed ports info
 
     Given: all agents are deployed
@@ -352,13 +322,11 @@ def test_agent_dashboard_exposed_ports(api_v1_client, os_version, csp, agent_hos
     timeout = 15000
     deployment_time = agent_host['deployment_time']
     deployment_timestamp = agent_host['deployment_timestamp']
-    agent_host_instance_id = agent_host_tf_output['agent_host_instance_id']
     agents_helper = AgentsHelper(api_v1_client, deployment_timestamp)
-    agents_helper.wait_until_agent_is_active(agent_host_instance_id, wait_until=deployment_time+timeout)
-    agents_helper.wait_until_agent_dashboard_has_exposed_ports(instance_id=agent_host_instance_id, wait_until=deployment_time+timeout)
+    agents_helper.wait_until_agent_dashboard_has_exposed_ports(hostname=terraform_owner, wait_until=deployment_time+timeout)
 
 
-def test_agent_dashboard_domain_lookups(api_v1_client, os_version, csp, agent_host, agent_host_tf_output):
+def test_agent_dashboard_domain_lookups(api_v1_client, os_version, csp, agent_host, agent_host_tf_output, wait_until_host_is_active, terraform_owner):
     """Test agent dashboard shows domain lookups info
 
     Given: all agents are deployed
@@ -374,10 +342,8 @@ def test_agent_dashboard_domain_lookups(api_v1_client, os_version, csp, agent_ho
     timeout = 15000
     deployment_time = agent_host['deployment_time']
     deployment_timestamp = agent_host['deployment_timestamp']
-    agent_host_instance_id = agent_host_tf_output['agent_host_instance_id']
     agents_helper = AgentsHelper(api_v1_client, deployment_timestamp)
-    agents_helper.wait_until_agent_is_active(agent_host_instance_id, wait_until=deployment_time+timeout)
-    agents_helper.wait_until_agent_dashboard_has_domain_lookups(instance_id=agent_host_instance_id, wait_until=deployment_time+timeout)
+    agents_helper.wait_until_agent_dashboard_has_domain_lookups(hostname=terraform_owner, wait_until=deployment_time+timeout)
 
 
 @pytest.mark.parametrize('csp', [
@@ -385,7 +351,7 @@ def test_agent_dashboard_domain_lookups(api_v1_client, os_version, csp, agent_ho
         pytest.param('azure', marks=pytest.mark.xfail(reason='https://lacework.atlassian.net/browse/FORTIQA-378')),
         pytest.param('gcp', marks=pytest.mark.xfail(reason='https://lacework.atlassian.net/browse/FORTIQA-378')),
     ], indirect=True)
-def test_agent_dashboard_udp_external_client_connection_details(api_v1_client, os_version, csp, agent_host, agent_host_tf_output):
+def test_agent_dashboard_udp_external_client_connection_details(api_v1_client, os_version, csp, agent_host, agent_host_tf_output, wait_until_host_is_active, terraform_owner):
     """Test agent dashboard shows udp external client connection details
 
     Given: all agents are deployed
@@ -403,14 +369,12 @@ def test_agent_dashboard_udp_external_client_connection_details(api_v1_client, o
     timeout = 15000
     deployment_time = agent_host['deployment_time']
     deployment_timestamp = agent_host['deployment_timestamp']
-    agent_host_instance_id = agent_host_tf_output['agent_host_instance_id']
     agents_helper = AgentsHelper(api_v1_client, deployment_timestamp)
-    agents_helper.wait_until_agent_is_active(agent_host_instance_id, wait_until=deployment_time+timeout)
-    agents_helper.wait_until_agent_dashboard_has_udp_external_client_connection_details(instance_id=agent_host_instance_id, wait_until=deployment_time+timeout)
+    agents_helper.wait_until_agent_dashboard_has_udp_external_client_connection_details(hostname=terraform_owner, wait_until=deployment_time+timeout)
 
 
 @pytest.mark.skip(reason="Need to discuss with dev team for more details")
-def test_agent_dashboard_tcp_internal_connection_to_internal_devices_without_agents(api_v1_client, os_version, csp, agent_host, agent_host_tf_output):
+def test_agent_dashboard_tcp_internal_connection_to_internal_devices_without_agents(api_v1_client, os_version, csp, agent_host, agent_host_tf_output, wait_until_host_is_active, terraform_owner):
     """Test agent dashboard shows TCP-Internal Connection to Internal Devices without Agents details
 
     Given: all agents are deployed
@@ -426,14 +390,12 @@ def test_agent_dashboard_tcp_internal_connection_to_internal_devices_without_age
     timeout = 15000
     deployment_time = agent_host['deployment_time']
     deployment_timestamp = agent_host['deployment_timestamp']
-    agent_host_instance_id = agent_host_tf_output['agent_host_instance_id']
     agents_helper = AgentsHelper(api_v1_client, deployment_timestamp)
-    agents_helper.wait_until_agent_is_active(agent_host_instance_id, wait_until=deployment_time+timeout)
-    agents_helper.wait_until_agent_dashboard_has_tcp_internal_connection_to_internal_devices_without_agents(instance_id=agent_host_instance_id, wait_until=deployment_time+timeout)
+    agents_helper.wait_until_agent_dashboard_has_tcp_internal_connection_to_internal_devices_without_agents(hostname=terraform_owner, wait_until=deployment_time+timeout)
 
 
 @pytest.mark.skip(reason="All hosts have no data inside TCP internal connection from internal devices without agents board")
-def test_agent_dashboard_tcp_internal_connection_from_internal_devices_without_agents(api_v1_client, os_version, csp, agent_host, agent_host_tf_output):
+def test_agent_dashboard_tcp_internal_connection_from_internal_devices_without_agents(api_v1_client, os_version, csp, agent_host, agent_host_tf_output, wait_until_host_is_active, terraform_owner):
     """Test agent dashboard shows TCP-Internal Connection from Internal Devices without Agents details
 
     Given: all agents are deployed
@@ -449,14 +411,12 @@ def test_agent_dashboard_tcp_internal_connection_from_internal_devices_without_a
     timeout = 15000
     deployment_time = agent_host['deployment_time']
     deployment_timestamp = agent_host['deployment_timestamp']
-    agent_host_instance_id = agent_host_tf_output['agent_host_instance_id']
     agents_helper = AgentsHelper(api_v1_client, deployment_timestamp)
-    agents_helper.wait_until_agent_is_active(agent_host_instance_id, wait_until=deployment_time+timeout)
-    agents_helper.wait_until_agent_dashboard_has_tcp_internal_connection_from_internal_devices_without_agents(instance_id=agent_host_instance_id, wait_until=deployment_time+timeout)
+    agents_helper.wait_until_agent_dashboard_has_tcp_internal_connection_from_internal_devices_without_agents(hostname=terraform_owner, wait_until=deployment_time+timeout)
 
 
 @pytest.mark.skip(reason="All hosts have no data inside TCP internal connection from internal devices without agents board")
-def test_agent_dashboard_udp_internal_connection_from_internal_devices_without_agents(api_v1_client, os_version, csp, agent_host, agent_host_tf_output):
+def test_agent_dashboard_udp_internal_connection_from_internal_devices_without_agents(api_v1_client, os_version, csp, agent_host, agent_host_tf_output, wait_until_host_is_active, terraform_owner):
     """Test agent dashboard shows UDP-Internal Connection from Internal Devices without Agents details
 
     Given: all agents are deployed
@@ -472,14 +432,12 @@ def test_agent_dashboard_udp_internal_connection_from_internal_devices_without_a
     timeout = 15000
     deployment_time = agent_host['deployment_time']
     deployment_timestamp = agent_host['deployment_timestamp']
-    agent_host_instance_id = agent_host_tf_output['agent_host_instance_id']
     agents_helper = AgentsHelper(api_v1_client, deployment_timestamp)
-    agents_helper.wait_until_agent_is_active(agent_host_instance_id, wait_until=deployment_time+timeout)
-    agents_helper.wait_until_agent_dashboard_has_udp_internal_connection_from_internal_devices_without_agents(instance_id=agent_host_instance_id, wait_until=deployment_time+timeout)
+    agents_helper.wait_until_agent_dashboard_has_udp_internal_connection_from_internal_devices_without_agents(hostname=terraform_owner, wait_until=deployment_time+timeout)
 
 
 @pytest.mark.skip(reason="Need to discuss with dev team for more details")
-def test_agent_dashboard_udp_internal_connection_to_internal_devices_without_agents(api_v1_client, os_version, csp, agent_host, agent_host_tf_output):
+def test_agent_dashboard_udp_internal_connection_to_internal_devices_without_agents(api_v1_client, os_version, csp, agent_host, agent_host_tf_output, wait_until_host_is_active, terraform_owner):
     """Test agent dashboard shows UDP-Internal Connection to Internal Devices without Agents details
 
     Given: all agents are deployed
@@ -495,10 +453,8 @@ def test_agent_dashboard_udp_internal_connection_to_internal_devices_without_age
     timeout = 15000
     deployment_time = agent_host['deployment_time']
     deployment_timestamp = agent_host['deployment_timestamp']
-    agent_host_instance_id = agent_host_tf_output['agent_host_instance_id']
     agents_helper = AgentsHelper(api_v1_client, deployment_timestamp)
-    agents_helper.wait_until_agent_is_active(agent_host_instance_id, wait_until=deployment_time+timeout)
-    agents_helper.wait_until_agent_dashboard_has_udp_internal_connection_to_internal_devices_without_agents(instance_id=agent_host_instance_id, wait_until=deployment_time+timeout)
+    agents_helper.wait_until_agent_dashboard_has_udp_internal_connection_to_internal_devices_without_agents(hostname=terraform_owner, wait_until=deployment_time+timeout)
 
 
 @pytest.mark.parametrize('os_version', set(linux_tf_modules).intersection([
@@ -512,7 +468,7 @@ def test_agent_dashboard_udp_internal_connection_to_internal_devices_without_age
     'centos_stream_8', 'centos_stream_9', 'centos_stream_10',
 ]), indirect=True)
 @pytest.mark.parametrize('csp', ['aws'], indirect=True)
-def test_agent_dashboard_active_containers(api_v1_client, os_version, csp, agent_host, agent_host_tf_output):
+def test_agent_dashboard_active_containers(api_v1_client, os_version, csp, agent_host, agent_host_tf_output, wait_until_host_is_active, terraform_owner):
     """Test agent dashboard shows list of active containers
 
     Given: all agents are deployed
@@ -528,7 +484,5 @@ def test_agent_dashboard_active_containers(api_v1_client, os_version, csp, agent
     timeout = 15000
     deployment_time = agent_host['deployment_time']
     deployment_timestamp = agent_host['deployment_timestamp']
-    agent_host_instance_id = agent_host_tf_output['agent_host_instance_id']
     agents_helper = AgentsHelper(api_v1_client, deployment_timestamp)
-    agents_helper.wait_until_agent_is_active(agent_host_instance_id, wait_until=deployment_time+timeout)
-    agents_helper.wait_until_agent_dashboard_has_list_of_active_containers(instance_id=agent_host_instance_id, wait_until=deployment_time+timeout)
+    agents_helper.wait_until_agent_dashboard_has_list_of_active_containers(hostname=terraform_owner, wait_until=deployment_time+timeout)

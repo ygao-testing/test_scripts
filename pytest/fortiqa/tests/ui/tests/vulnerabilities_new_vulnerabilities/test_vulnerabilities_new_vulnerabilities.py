@@ -123,34 +123,3 @@ def test_verify_new_vulnerabilities_top_items_tab(ui, delete_files, widget):
         1213539 Hide the Widget section on the top by clicking "Hide"
     """
     ui.vulnerabilities_new_vuln.verify_top_items_tab(widget)
-
-
-# Explore #
-# @pytest.mark.skip(reasons="Not ready since UI changed. https://lacework.atlassian.net/browse/FORTIQA-403")
-@pytest.mark.download
-@pytest.mark.parametrize("delete_files", [{"prefix": "", "suffix": "csv"}], indirect=True)
-@pytest.mark.parametrize("show",
-                         ["Vulnerabilities", "Hosts", "Packages", "Container images", "Unique vulnerabilities by host",
-                          "Unique vulnerabilities by container image"])
-def test_verify_new_vulnerabilities_explore_tab(ui, delete_files, show):
-    """
-    Test Verify new vulnerabilities Explore Tab
-    Oriole Test Cases:
-        Explore
-        1210277 Show all Hosts
-        1210295 Show all Vulnerabilities
-        1210296 Show all Packages
-        1206969 Show all Container images
-        1210298 Show all Unique vulnerabilities by host
-        1210299 Show all Unique vulnerabilities by container image
-        1210272 "Clear query" button
-        1210273 "Cancel" button
-        1210274 "Search" button
-        1206482 Show correct query results
-        1206483 Refresh button
-        1206484 Initiate Downloading "Table CSV" from the list
-        1206486 Show "CSV ready to download" notification on top right corner when downloading is ready
-        1206487 Correct format and value in the downloaded "Table CSV"
-        1206489 Display a particular number of lines
-    """
-    ui.vulnerabilities_new_vuln.verify_explore_tab(show)
