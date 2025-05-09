@@ -46,6 +46,7 @@ app:
         aws_access_key_id: "$AWS_ACCESS_KEY_ID"
         aws_secret_access_key: "$AWS_SECRET_ACCESS_KEY"
 """
+                sleep time: 3000
                 script {
                     def windows_list = windows_tf_modules.split(',').collect { it.trim() } as List
                     def supported_csps = cloud_platforms.split(',').collect { it.trim() } as List
