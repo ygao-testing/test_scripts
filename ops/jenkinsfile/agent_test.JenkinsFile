@@ -61,6 +61,7 @@ app:
                         export GOOGLE_APPLICATION_CREDENTIALS=${GCP_CREDS}
                         cd pytest/fortiqa/tests
                         pwd
+                        sleep 99999999
                         ls e2e/agents/
                         sed -i "s/windows_tf_modules: list = \\[.*\\]/windows_tf_modules: list = ${modified_windows_list}/" e2e/agents/host_versions.py
                         sed -i "s/supported_csps: list = \\[.*\\]/supported_csps: list = ${modified_supported_csps}/" e2e/agents/host_versions.py
