@@ -29,7 +29,7 @@ pipeline {
                 ARM_SUBSCRIPTION_ID = credentials('ARM_SUBSCRIPTION_ID')
             }
             steps {
-                sleep time: 30
+                sleep time: 5
                 writeFile file: 'fortiqa/pytest/fortiqa/tests/user_config.yaml', text: """
 ---
 app:
@@ -58,7 +58,6 @@ app:
                         . ./venv/bin/activate
                         cd fortiqa
                         cat pytest/fortiqa/tests/user_config.yaml
-                        git checkout ${BRANCH}
                         export GOOGLE_APPLICATION_CREDENTIALS=${GCP_CREDS}
                         cd pytest/fortiqa/tests
                         sed -i "s/windows_tf_modules: list = \\[.*\\]/windows_tf_modules: list = ${modified_windows_list}/" e2e/agents/host_versions.py
