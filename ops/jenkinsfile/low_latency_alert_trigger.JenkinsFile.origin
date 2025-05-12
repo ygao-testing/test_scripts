@@ -1,0 +1,329 @@
+import groovy.json.JsonSlurper
+
+// Define a global variable to store test results
+def testResults = [
+    total: 0,
+    passed: 0,
+    failed: 0,
+    skipped: 0,
+    xfailed: 0,
+    xpassed: 0,
+    passRate: 0,
+    start_time: '',
+    test_duration: 0,
+    collected: 0
+]
+def computedTestResults = null
+
+node('autocontroller_10.65.10.111') {
+    script {
+        randomFolder = "cnapp_autotest_${UUID.randomUUID().toString()}"
+        containerName = randomFolder
+        echo "Using folder: ${randomFolder}"
+        echo "Using container name: ${containerName}"
+    }
+    
+    try {
+        stage('Git Clone') {
+            dir("${env.WORKSPACE}/${randomFolder}") {
+                checkout([
+                    $class: 'GitSCM', 
+                    branches: [[name: '*/low_latency ']],
+                    doGenerateSubmoduleConfigurations: false,
+                    extensions: [],
+                    userRemoteConfigs: [[
+                        credentialsId: 'service_monitor',
+                        url: 'git@dops-git.fortinet-us.com:monitor/cnapp_autotest.git'
+                    ]]
+                ])
+            }
+        }
+        
+        stage('Copy user_config.yaml') {
+            withCredentials([file(credentialsId: params.USER_CONFIG, variable: 'USERCONFIG_FILE')]) {
+                sh """
+                    cp "\$USERCONFIG_FILE" "${env.WORKSPACE}/${randomFolder}/pytest/fortiqa/tests/user_config.yaml"
+                """
+            }
+        }
+        
+        stage('Deploy Docker Container') {
+            sh """
+                docker run -d --name ${containerName} --dns=8.8.8.8 --dns=172.30.1.106 \\
+                -v ${env.WORKSPACE}/${randomFolder}:/workspace \\
+                -m 16g \\
+                --shm-size=2g \\
+                -p 22 -p 5901 -p 8086\\
+                harbor.fortihawkeye.com/autotest/pytest:latest
+            """
+        }
+        
+        stage('Get noVNC Link') {
+            script {
+                // Get the noVNC, VNC, SSH ports
+                def sshPort = sh(script: "docker inspect ${containerName} --format='{{json .NetworkSettings.Ports}}' | jq -r '.\"22/tcp\"[0].HostPort'", returnStdout: true).trim()
+                def vncPort = sh(script: "docker inspect ${containerName} --format='{{json .NetworkSettings.Ports}}' | jq -r '.\"5901/tcp\"[0].HostPort'", returnStdout: true).trim()
+                def noVncPort = sh(script: "docker inspect ${containerName} --format='{{json .NetworkSettings.Ports}}' | jq -r '.\"8086/tcp\"[0].HostPort'", returnStdout: true).trim()
+                def nodeIP = sh(script: "hostname -I | awk '{print \$1}'", returnStdout: true).trim()
+                echo "noVNC Link: http://${nodeIP}:${noVncPort}/vnc.html?autoconnect=true\n VNC Address: ${nodeIP}:${vncPort}\n SSH: ssh -p ${sshPort} root@${nodeIP}"
+            }
+        }
+        
+        stage('Run Tests') {
+            try {
+                sh """
+                    docker exec ${containerName} /bin/bash -c "cd /workspace/pytest/fortiqa/tests && \\
+                    pytest -v ${params.PYTEST_TARGET} \\
+                    --alluredir=allure-results \\
+                    --json-report \\
+                    --json-report-summary \\
+                    --json-report-file=report.json"
+                """
+            } finally {
+                def jsonReportPath = "${env.WORKSPACE}/${randomFolder}/pytest/fortiqa/tests/report.json"
+                if (fileExists(jsonReportPath)) {
+                    def pythonResult = processJsonReport(jsonReportPath)
+                    updateTestResults(testResults, pythonResult)
+                    echoResults(testResults)
+                }
+            }
+        }
+        
+    } catch (e) {
+        currentBuild.result = 'FAILURE'
+        echo "Build failed: ${e.message}"
+        throw e
+    } finally {
+        if (computedTestResults == null) {
+            computedTestResults = testResults
+        }
+        generateAllureReport(containerName, randomFolder)
+        def artifactsToArchive = [
+            [
+                containerPath: '/workspace/pytest/fortiqa/tests/report.html',
+                hostPath: "${randomFolder}/pytest/fortiqa/tests/",
+                archivePattern: "${randomFolder}/pytest/fortiqa/tests/report.html"
+            ],
+            [
+                containerPath: '/workspace/pytest/fortiqa/tests/lacework_test.log',
+                hostPath: "${randomFolder}/pytest/fortiqa/tests/",
+                archivePattern: "${randomFolder}/pytest/fortiqa/tests/lacework_test.log"
+            ],
+            [
+                containerPath: '/workspace/allure-report',
+                hostPath: "${randomFolder}/allure-report/",
+                archivePattern: "${randomFolder}/allure-report/**"
+            ]
+        ]
+        archiveArtifactFiles(artifactsToArchive, containerName)
+        postEmailNotification(computedTestResults, randomFolder)
+        uploadReport(randomFolder)
+        linkAllurReport(randomFolder)
+        cleanupDockerContainer(containerName)
+    }
+}
+
+def processJsonReport(String jsonReportPath) {
+    return sh(script: """python - <<'EOF'
+import json, datetime, pytz
+with open("${jsonReportPath}", "r") as f:
+    data = json.load(f)
+results = {}
+raw_time = data.get("created", 0)
+utc_dt = datetime.datetime.utcfromtimestamp(raw_time).replace(tzinfo=pytz.utc)
+us_tz = pytz.timezone("US/Eastern")
+us_dt = utc_dt.astimezone(us_tz)
+us_dt_adjusted = us_dt - datetime.timedelta(hours=3)
+results["start_time"] = us_dt_adjusted.strftime('%Y-%m-%d %I:%M:%S %p')
+duration = data.get("duration", 0)
+hours, remainder = divmod(duration, 3600)
+days, hours = divmod(hours, 24)
+minutes, seconds = divmod(remainder, 60)
+time_parts = []
+if days > 0:
+    time_parts.append(f"{int(days)} day{'s' if days > 1 else ''}")
+if hours > 0:
+    time_parts.append(f"{int(hours)} hour{'s' if hours > 1 else ''}")
+if minutes > 0:
+    time_parts.append(f"{int(minutes)} min{'s' if minutes > 1 else ''}")
+if seconds > 0 or not time_parts:
+    time_parts.append(f"{round(seconds, 2)} sec{'s' if seconds != 1 else ''}")
+results["test_duration"] = " ".join(time_parts)
+results["total"] = data.get("summary", {}).get("total", len(data.get("tests", [])))
+results["collected"] = data.get("summary", {}).get("collected", len(data.get("tests", [])))
+xpassed = data.get("summary", {}).get("xpassed", 0)
+results["passed"] = data.get("summary", {}).get("passed", 0) + xpassed
+xfailed = data.get("summary", {}).get("xfailed", 0)
+results["skipped"] = data.get("summary", {}).get("skipped", 0) + xfailed
+results["failed"] = results["total"] - results["passed"] - results["skipped"]
+if results["total"] > 0:
+    results["passRate"] = round(results["passed"] / (results["total"] - results["skipped"]) * 100, 2)
+else:
+    results["passRate"] = 0
+print(json.dumps(results))
+EOF
+""", returnStdout: true).trim()
+}
+
+def updateTestResults(Map testResults, String pythonResult) {
+    def parser = new JsonSlurper()
+    def pythonResults = parser.parseText(pythonResult)
+    testResults.start_time    = pythonResults.start_time
+    testResults.test_duration = pythonResults.test_duration
+    testResults.total         = pythonResults.total
+    testResults.collected     = pythonResults.collected
+    testResults.passed        = pythonResults.passed
+    testResults.skipped       = pythonResults.skipped
+    testResults.failed        = pythonResults.failed
+    testResults.xfailed       = pythonResults.xfailed
+    testResults.xpassed       = pythonResults.xpassed
+    testResults.passRate      = pythonResults.passRate
+}
+
+def echoResults(Map testResults) {
+    echo "Parsed test results (via Python):"
+    echo "Start Time: ${testResults.start_time}"
+    echo "Test Duration: ${testResults.test_duration}"
+    echo "Total: ${testResults.total}"
+    echo "Passed: ${testResults.passed}"
+    echo "Failed: ${testResults.failed}"
+    echo "xFailed: ${testResults.xfailed}"
+    echo "xPassed: ${testResults.xpassed}"
+    echo "Skipped: ${testResults.skipped}"
+    echo "Pass Rate: ${testResults.passRate}%"
+}
+
+def handleTestExecutionError(Exception e, Map testResults) {
+    echo "Error in test execution: ${e.message}"
+    testResults.failed = 1
+    throw e
+}
+def generateAllureReport(String containerName, String randomFolder) {
+    stage('Generate Allure Report') {
+        // Define a unified directory for storing history (on the host)
+        def historyFolder = "${env.WORKSPACE}/history"
+        
+        // Ensure the history directory exists on the host (create if it doesn't)
+        sh "mkdir -p ${historyFolder}"
+        
+        // Step 1: Copy the host's history to the container's allure-results/history directory
+        // Ensure the allure-results/history directory exists in the container
+        sh "docker exec ${containerName} mkdir -p /workspace/pytest/fortiqa/tests/allure-results/history"
+        
+        // Copy the host's history to the container (note: destination path ends with a slash)
+        sh "docker cp ${historyFolder}/. ${containerName}:/workspace/pytest/fortiqa/tests/allure-results/history/"
+        
+        // Step 2: Generate a new Allure report inside the container
+        sh """
+            docker exec ${containerName} /bin/bash -c "cd /workspace/pytest/fortiqa/tests && \\
+            allure generate allure-results -o /workspace/allure-report --clean && \\
+            chown -R 1000:1000  /workspace/allure-report && \\
+            chmod -R 755  /workspace/allure-report"
+        """
+        
+        // Step 3: Update the host's history directory with the new report's history from the container
+        sh "docker cp --archive ${containerName}:/workspace/allure-report/history/. ${historyFolder}/"
+    }
+}
+
+def linkAllurReport(String randomFolder) {
+    stage('Link Allure Report & Logs') {
+        def buildUrl = env.BUILD_URL
+        def AllureartifactPath = "${randomFolder}/allure-report/index.html"
+        def AllureartifactLink = "${buildUrl}artifact/${AllureartifactPath}"
+        def pytestReportPath = "${randomFolder}/pytest/fortiqa/tests/report.html"
+        def pytestReportLink = "${buildUrl}artifact/${pytestReportPath}"
+        def pytestLogPath = "${randomFolder}/pytest/fortiqa/tests/lacework_test.log"
+        def pytestLogLink = "${buildUrl}artifact/${pytestLogPath}"
+        echo "Allure Report Link: ${AllureartifactLink}\nPytest Report: ${pytestReportLink}\nPytest Log: ${pytestLogLink}"
+    }
+}
+
+def uploadReport(String randomFolder) {
+    stage('Upload Report') {
+        sh """
+            sshpass -p "fortinet" scp -o StrictHostKeyChecking=no -r \\
+            ${env.WORKSPACE}/${randomFolder}/allure-report/* \\
+            docs@10.65.10.246:/home/docs/Lacework_Pytest_CI/
+        """
+    }
+}
+
+def cleanupDockerContainer(String containerName) {
+    stage('Cleanup Docker Container') {
+        echo "Stopping and removing Docker container: ${containerName}"
+        sh "docker stop ${containerName} || true"
+        sh "docker rm ${containerName} || true"
+    }
+}
+
+def archiveArtifactFiles(List filesToArchive, String containerName = null) {
+    stage('Archive Artifacts') {
+        filesToArchive.each { fileConfig ->
+            try {
+                if (containerName && fileConfig.containerPath) {
+                    def targetDir = "${env.WORKSPACE}/${fileConfig.hostPath}"
+                    sh """
+                        mkdir -p ${targetDir}
+                        docker cp ${containerName}:${fileConfig.containerPath} ${targetDir}
+                    """
+                }
+                if (fileExists("${env.WORKSPACE}/${fileConfig.hostPath}")) {
+                    archiveArtifacts artifacts: fileConfig.archivePattern, allowEmptyArchive: true
+                }
+            } catch (Exception e) {
+                echo "ERROR: ${e.message}"
+            }
+        }
+    }
+}
+
+def postEmailNotification(Map results, String randomFolder) {
+    def recipients = params.EMAIL_RECIPIENTS
+    def buildStatus = currentBuild.result ?: 'SUCCESS'
+
+    if (buildStatus == 'ABORTED') {
+        echo "Build was aborted, skipping email notification."
+        return
+    }    
+
+    def buildUrl = env.BUILD_URL
+    def allureArtifactPath = "${randomFolder}/allure-report/index.html"
+    def allureArtifactLink = "${buildUrl}artifact/${allureArtifactPath}"
+    def pytestReportPath = "${randomFolder}/pytest/fortiqa/tests/report.html"
+    def pytestReportLink = "${buildUrl}artifact/${pytestReportPath}"
+    def pytestLogPath = "${randomFolder}/pytest/fortiqa/tests/lacework_test.log"
+    def pytestLogLink = "${buildUrl}artifact/${pytestLogPath}"
+    
+    def emailBody = """
+    <html>
+      <body>
+        <p><strong>Job:</strong> ${env.JOB_NAME}</p>
+        <p><strong>Build:</strong> ${env.BUILD_NUMBER}</p>
+        <p><strong>Status:</strong> ${buildStatus}</p>
+        <p><strong>Job URL:</strong> <a href="${buildUrl}">${buildUrl}</a></p>
+        <hr>
+        <p><strong>Test Results Summary:</strong><br>
+           Start Time: ${results.start_time}<br>
+           Test Duration: ${results.test_duration} seconds<br>
+           Total Tests: ${results.total}<br>
+           Passed: ${results.passed}<br>
+           Failed: ${results.failed}<br>
+           Skipped: ${results.skipped}<br>
+           Overall Pass Rate: ${results.passRate}%<br>
+        </p>
+        <p><strong>Artifacts:</strong><br>
+           Allure Report: <a href="${allureArtifactLink}">Link</a><br>
+           Pytest Report: <a href="${pytestReportLink}">Link</a><br>
+           Pytest Log: <a href="${pytestLogLink}">Link</a>
+        </p>
+        <hr>
+      </body>
+    </html>
+    """
+    
+    mail to: recipients,
+         subject: "[Jenkins] Lacework AutoTest ${buildStatus}: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'",
+         body: emailBody,
+         mimeType: 'text/html'
+}
