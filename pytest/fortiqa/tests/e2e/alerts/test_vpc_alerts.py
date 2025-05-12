@@ -16,6 +16,7 @@ from fortiqa.tests import settings
 from botocore.exceptions import ClientError
 from playwright.sync_api import sync_playwright
 from fortiqa.tests.e2e.alerts.conftest import SLEEP_TIMEOUT, QUERY_TIMEOUT, FILTER_TIME_RANGE
+from case_helper import *
 
 logger = logging.getLogger(__name__)
 
@@ -29,16 +30,17 @@ def test_root_account(api_v1_client, api_v2_client, aws_account):
     try:
         logger.info(f"***start to generate event***")
         iam = boto3.client(
-            'iam',aws_access_key_id=aws_account.aws_root_access_key_id, 
-             aws_secret_access_key=aws_account.aws_root_secret_access_key, 
-             region_name=aws_account.aws_terraform_s3_backend_region
+            'iam',aws_access_key_id=aws_account.aws_access_key_id, 
+             aws_secret_access_key=aws_account.aws_secret_access_key, 
+             region_name=aws_account.aws_terrafrom_s3_backend_region
         )
         start_time_8 = datetime.now()
         alert_trigger_time = time.time()
-        response = iam.list_users()
+        iam.list_users()
         logger.info(f"***event generated successsfully***")
     except Exception as e:
         logger.error(f"An error occured: {e}")
+        pytest.fail(f"Test failed due to error: {e}")
 
 
     # check alert
